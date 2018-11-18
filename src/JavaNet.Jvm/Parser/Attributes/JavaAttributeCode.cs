@@ -1,9 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
 
 namespace JavaNet.Jvm.Parser.Attributes
 {
     /// <summary>
-    /// Attribute representing a constant value.
+    /// Attribute representing code.
     /// </summary>
     /// <seealso cref="JavaAttribute" />
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Easier to work with.")]
@@ -108,5 +109,44 @@ namespace JavaNet.Jvm.Parser.Attributes
         /// The attributes.
         /// </value>
         public IJavaAttribute[] Attributes { get; }
+
+        /// <summary>
+        /// Reads the attribute code.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <param name="constantPool">The constant pool.</param>
+        /// <param name="nameIndex">Index of the name.</param>
+        /// <param name="length">The length.</param>
+        /// <returns>Code attribute read from the stream.</returns>
+        public static JavaAttributeCode ReadFromStream(Stream stream, JavaConstantPool constantPool, ushort nameIndex, uint length)
+        {
+            ushort maxStack = stream.ReadShort();
+            ushort maxLocal = stream.ReadShort();
+            uint codeLength = stream.ReadInteger();
+            byte[] code = stream.ReadBytes(codeLength);
+            ushort exceptionTableLength = stream.ReadShort();
+            JavaExceptionTableEntry[] exceptionTable = ReadExceptionTable(stream, exceptionTableLength);
+            ushort attributesCount = stream.ReadShort();
+            IJavaAttribute[] attributes = ReadFromStream(stream, attributesCount, constantPool);
+            return new JavaAttributeCode(nameIndex, length, maxStack, maxLocal, codeLength, code, exceptionTableLength, exceptionTable, attributesCount, attributes);
+        }
+
+        /// <summary>
+        /// Reads a number of exception table entries from a stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <param name="count">The number of exception table entries.</param>
+        /// <returns>Exception table.</returns>
+        private static JavaExceptionTableEntry[] ReadExceptionTable(Stream stream, int count)
+        {
+            JavaExceptionTableEntry[] result = new JavaExceptionTableEntry[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                result[i] = new JavaExceptionTableEntry(stream.ReadShort(), stream.ReadShort(), stream.ReadShort(), stream.ReadShort());
+            }
+
+            return result;
+        }
     }
 }

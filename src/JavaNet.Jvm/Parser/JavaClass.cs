@@ -185,7 +185,7 @@ namespace JavaNet.Jvm.Parser
             result.MethodsCount = stream.ReadShort();
             result.Methods = ReadMethods(stream, result.MethodsCount, result.ConstantPool);
             result.AttributesCount = stream.ReadShort();
-            result.Attributes = ReadAttributes(stream, result.AttributesCount, result.ConstantPool);
+            result.Attributes = JavaAttribute.ReadFromStream(stream, result.AttributesCount, result.ConstantPool);
 
             return result;
         }
@@ -254,48 +254,6 @@ namespace JavaNet.Jvm.Parser
         }
 
         /// <summary>
-        /// Reads attributes from the stream.
-        /// </summary>
-        /// <param name="stream">The stream to read from.</param>
-        /// <param name="count">The number of attributes to read.</param>
-        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
-        /// <returns>The attributes from the stream.</returns>
-        private static IJavaAttribute[] ReadAttributes(Stream stream, int count, JavaConstantPool constantPool)
-        {
-            IJavaAttribute[] result = new IJavaAttribute[count];
-
-            for (int i = 0; i < count; i++)
-            {
-                result[i] = ReadAttribute(stream, constantPool);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Reads an attribute from the given stream.
-        /// </summary>
-        /// <param name="stream">The stream to read from.</param>
-        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
-        /// <returns>The attribute read from the stream.</returns>
-        private static IJavaAttribute ReadAttribute(Stream stream, JavaConstantPool constantPool)
-        {
-            ushort nameIndex = stream.ReadShort();
-            uint length = stream.ReadInteger();
-            string name = ((JavaConstantUtf8)constantPool[nameIndex]).Value;
-
-            switch (name)
-            {
-                case "ConstantValue":
-                    return new JavaAttributeConstantValue(nameIndex, length, stream.ReadShort());
-                case "Code":
-                    return ReadAttributeCode(stream, constantPool, nameIndex, length);
-                default:
-                    return new JavaAttributeUnknown(nameIndex, length, stream.ReadBytes(length));
-            }
-        }
-
-        /// <summary>
         /// Reads fields from the stream.
         /// </summary>
         /// <param name="stream">The stream to read the fields from.</param>
@@ -326,7 +284,7 @@ namespace JavaNet.Jvm.Parser
             ushort nameIndex = stream.ReadShort();
             ushort descriptorIndex = stream.ReadShort();
             ushort attributesCount = stream.ReadShort();
-            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount, constantPool);
+            IJavaAttribute[] attributes = JavaAttribute.ReadFromStream(stream, attributesCount, constantPool);
             return new JavaField(flags, nameIndex, descriptorIndex, attributesCount, attributes);
         }
 
@@ -361,47 +319,8 @@ namespace JavaNet.Jvm.Parser
             ushort nameIndex = stream.ReadShort();
             ushort descriptorIndex = stream.ReadShort();
             ushort attributesCount = stream.ReadShort();
-            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount, constantPool);
+            IJavaAttribute[] attributes = JavaAttribute.ReadFromStream(stream, attributesCount, constantPool);
             return new JavaMethod(flags, nameIndex, descriptorIndex, attributesCount, attributes);
-        }
-
-        /// <summary>
-        /// Reads the attribute code.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <param name="constantPool">The constant pool.</param>
-        /// <param name="nameIndex">Index of the name.</param>
-        /// <param name="length">The length.</param>
-        /// <returns>Code attribute read from the stream.</returns>
-        private static JavaAttributeCode ReadAttributeCode(Stream stream, JavaConstantPool constantPool, ushort nameIndex, uint length)
-        {
-            ushort maxStack = stream.ReadShort();
-            ushort maxLocal = stream.ReadShort();
-            uint codeLength = stream.ReadInteger();
-            byte[] code = stream.ReadBytes(codeLength);
-            ushort exceptionTableLength = stream.ReadShort();
-            JavaExceptionTableEntry[] exceptionTable = ReadExceptionTable(stream, exceptionTableLength);
-            ushort attributesCount = stream.ReadShort();
-            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount, constantPool);
-            return new JavaAttributeCode(nameIndex, length, maxStack, maxLocal, codeLength, code, exceptionTableLength, exceptionTable, attributesCount, attributes);
-        }
-
-        /// <summary>
-        /// Reads a number of exception table entries from a stream.
-        /// </summary>
-        /// <param name="stream">The stream to read from.</param>
-        /// <param name="count">The number of exception table entries.</param>
-        /// <returns>Exception table.</returns>
-        private static JavaExceptionTableEntry[] ReadExceptionTable(Stream stream, int count)
-        {
-            JavaExceptionTableEntry[] result = new JavaExceptionTableEntry[count];
-
-            for (int i = 0; i < count; i++)
-            {
-                result[i] = new JavaExceptionTableEntry(stream.ReadShort(), stream.ReadShort(), stream.ReadShort(), stream.ReadShort());
-            }
-
-            return result;
         }
     }
 }

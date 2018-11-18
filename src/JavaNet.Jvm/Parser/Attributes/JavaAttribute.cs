@@ -1,4 +1,7 @@
-﻿namespace JavaNet.Jvm.Parser.Attributes
+﻿using System.IO;
+using JavaNet.Jvm.Parser.Constants;
+
+namespace JavaNet.Jvm.Parser.Attributes
 {
     /// <summary>
     /// Abstract class for java attributes.
@@ -32,5 +35,51 @@
         /// The length of the attribute in number of bytes.
         /// </value>
         public uint Length { get; }
+
+        /// <summary>
+        /// Reads attributes from a stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <param name="count">The amount of attributes to read.</param>
+        /// <param name="constantPool">The constant pool.</param>
+        /// <returns>An array of attributes read from the stream.</returns>
+        public static IJavaAttribute[] ReadFromStream(Stream stream, int count, JavaConstantPool constantPool)
+        {
+            IJavaAttribute[] result = new IJavaAttribute[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                result[i] = ReadAttribute(stream, constantPool);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reads an attribute from the given stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
+        /// <returns>The attribute read from the stream.</returns>
+        private static IJavaAttribute ReadAttribute(Stream stream, JavaConstantPool constantPool)
+        {
+            ushort nameIndex = stream.ReadShort();
+            uint length = stream.ReadInteger();
+            string name = ((JavaConstantUtf8)constantPool[nameIndex]).Value;
+
+            // TODO: Add StackMapTable attribute
+            switch (name)
+            {
+                case "ConstantValue":
+                    return new JavaAttributeConstantValue(nameIndex, length, stream.ReadShort());
+                case "Code":
+                    return JavaAttributeCode.ReadFromStream(stream, constantPool, nameIndex, length);
+                case "Exceptions":
+                    ushort exceptionCount = stream.ReadShort();
+                    return new JavaAttributeExceptions(nameIndex, length, exceptionCount, stream.ReadShorts(exceptionCount));
+                default:
+                    return new JavaAttributeUnknown(nameIndex, length, stream.ReadBytes(length));
+            }
+        }
     }
 }
