@@ -22,7 +22,7 @@ namespace JavaNet.Jvm.Tests.Parser
             {
                 JavaClass jc = JavaClass.Create(stream);
                 AssertThat(jc.Magic).IsEqualTo(0xCAFEBABE);
-                AssertThat(jc.AccessFlags).IsEqualTo(JavaAccessFlags.Public | JavaAccessFlags.Super);
+                AssertThat(jc.AccessFlags).IsEqualTo(JavaClassAccessFlags.Public | JavaClassAccessFlags.Super);
                 AssertThat(jc.FieldsCount).IsEqualTo(0);
                 AssertThat(jc.InterfacesCount).IsEqualTo(0);
                 AssertThat(((JavaConstantUtf8)jc.ConstantPool[((JavaConstantClass)jc.ConstantPool[jc.ThisClassIndex]).NameIndex]).Value)

@@ -63,7 +63,7 @@ namespace JavaNet.Jvm.Parser
         /// <value>
         /// The access flags.
         /// </value>
-        public JavaAccessFlags AccessFlags { get; private set; }
+        public JavaClassAccessFlags AccessFlags { get; private set; }
 
         /// <summary>
         /// Gets the index of this class in the constant pool.
@@ -132,7 +132,7 @@ namespace JavaNet.Jvm.Parser
             result.MajorVersion = stream.ReadShort();
             result.ConstantPoolCount = stream.ReadShort();
             result.ConstantPool = ReadConstants(stream, result.ConstantPoolCount);
-            result.AccessFlags = (JavaAccessFlags)stream.ReadShort();
+            result.AccessFlags = (JavaClassAccessFlags)stream.ReadShort();
             result.ThisClassIndex = stream.ReadShort();
             result.SuperClassIndex = stream.ReadShort();
             result.InterfacesCount = stream.ReadShort();

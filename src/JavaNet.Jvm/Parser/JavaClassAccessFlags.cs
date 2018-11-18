@@ -6,7 +6,7 @@ namespace JavaNet.Jvm.Parser
     /// Enum flags representing access flags of classes.
     /// </summary>
     [Flags]
-    public enum JavaAccessFlags
+    public enum JavaClassAccessFlags
     {
         /// <summary>
         /// The public keyword.
