@@ -286,6 +286,8 @@ namespace JavaNet.Jvm.Parser
 
             switch (name)
             {
+                case "ConstantValue":
+                    return new JavaAttributeConstantValue(nameIndex, length, stream.ReadShort());
                 default:
                     return new JavaAttributeUnknown(nameIndex, length, stream.ReadBytes(length));
             }
