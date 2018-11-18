@@ -1,0 +1,21 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: microsoft/dotnet:2.0-sdk
+    steps:
+      - checkout
+      - run:
+          name: Dependencies
+          command: |
+                   cd src
+                   dotnet restore
+      - run:
+          name: Tests
+          command: |
+                   cd src
+                   dotnet test JavaNet.Jvm.Tests /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=bin/
+      - run:
+          name: Codecov
+          command: |
+                   bash <(curl -s https://codecov.io/bash) -f "src/JavaNet.Jvm.Tests/bin/coverage.opencover.xml" -t $CODECOV_KEY
