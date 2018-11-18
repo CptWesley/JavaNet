@@ -2,7 +2,7 @@
 using Xunit;
 using static AssertNet.Xunit.Assertions;
 
-namespace JavaNet.Jvm.Tests.Parser
+namespace JavaNet.Jvm.Tests.Parser.Fields
 {
     /// <summary>
     /// Test class for the <see cref="JavaFieldAccessFlags"/> class.
