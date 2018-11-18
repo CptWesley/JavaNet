@@ -263,7 +263,7 @@ namespace JavaNet.Jvm.Parser
         {
             IJavaAttribute[] result = new IJavaAttribute[count];
 
-            for (int i = 0; i < count - 1; i++)
+            for (int i = 0; i < count; i++)
             {
                 result[i] = ReadAttribute(stream);
             }
@@ -298,7 +298,7 @@ namespace JavaNet.Jvm.Parser
         {
             JavaField[] result = new JavaField[count];
 
-            for (int i = 0; i < count - 1; i++)
+            for (int i = 0; i < count; i++)
             {
                 result[i] = ReadField(stream);
             }
@@ -331,7 +331,7 @@ namespace JavaNet.Jvm.Parser
         {
             JavaMethod[] result = new JavaMethod[count];
 
-            for (int i = 0; i < count - 1; i++)
+            for (int i = 0; i < count; i++)
             {
                 result[i] = ReadMethod(stream);
             }

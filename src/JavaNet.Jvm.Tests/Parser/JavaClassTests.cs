@@ -29,6 +29,7 @@ namespace JavaNet.Jvm.Tests.Parser
                     .IsEqualTo("HelloWorld");
                 AssertThat(((JavaConstantUtf8)jc.ConstantPool[((JavaConstantClass)jc.ConstantPool[jc.SuperClassIndex]).NameIndex]).Value)
                     .IsEqualTo("java/lang/Object");
+                AssertThat(stream.Position).IsEqualTo(stream.Length);
             }
         }
     }
