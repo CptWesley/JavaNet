@@ -77,6 +77,19 @@ namespace JavaNet.Jvm.Parser.Attributes
                 case "Exceptions":
                     ushort exceptionCount = stream.ReadShort();
                     return new JavaAttributeExceptions(nameIndex, length, exceptionCount, stream.ReadShorts(exceptionCount));
+                case "BootstrapMethods":
+                case "InnerClasses":
+                case "EnclosingMethods":
+                case "Synthetic":
+                case "Signature":
+                case "RuntimeVisibleAnnotations":
+                case "RuntimeInvisibleAnnotations":
+                case "RuntimeVisibleParameterAnnotations":
+                case "RuntimeInvisibleParameterAnnotations":
+                case "RuntimeVisibleTypeAnnotations":
+                case "RuntimeInvisibleTypeAnnotations":
+                case "AnnotationDefault":
+                case "MethodParameters":
                 default:
                     return new JavaAttributeUnknown(nameIndex, length, stream.ReadBytes(length));
             }
