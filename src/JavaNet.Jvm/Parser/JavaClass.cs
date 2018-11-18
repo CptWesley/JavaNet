@@ -181,11 +181,11 @@ namespace JavaNet.Jvm.Parser
             result.InterfacesCount = stream.ReadShort();
             result.Interfaces = stream.ReadShorts(result.InterfacesCount);
             result.FieldsCount = stream.ReadShort();
-            result.Fields = ReadFields(stream, result.FieldsCount);
+            result.Fields = ReadFields(stream, result.FieldsCount, result.ConstantPool);
             result.MethodsCount = stream.ReadShort();
-            result.Methods = ReadMethods(stream, result.MethodsCount);
+            result.Methods = ReadMethods(stream, result.MethodsCount, result.ConstantPool);
             result.AttributesCount = stream.ReadShort();
-            result.Attributes = ReadAttributes(stream, result.AttributesCount);
+            result.Attributes = ReadAttributes(stream, result.AttributesCount, result.ConstantPool);
 
             return result;
         }
@@ -258,14 +258,15 @@ namespace JavaNet.Jvm.Parser
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
         /// <param name="count">The number of attributes to read.</param>
+        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
         /// <returns>The attributes from the stream.</returns>
-        private static IJavaAttribute[] ReadAttributes(Stream stream, int count)
+        private static IJavaAttribute[] ReadAttributes(Stream stream, int count, JavaConstantPool constantPool)
         {
             IJavaAttribute[] result = new IJavaAttribute[count];
 
             for (int i = 0; i < count; i++)
             {
-                result[i] = ReadAttribute(stream);
+                result[i] = ReadAttribute(stream, constantPool);
             }
 
             return result;
@@ -275,17 +276,19 @@ namespace JavaNet.Jvm.Parser
         /// Reads an attribute from the given stream.
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
+        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
         /// <returns>The attribute read from the stream.</returns>
-        private static IJavaAttribute ReadAttribute(Stream stream)
+        private static IJavaAttribute ReadAttribute(Stream stream, JavaConstantPool constantPool)
         {
             ushort nameIndex = stream.ReadShort();
             uint length = stream.ReadInteger();
-            for (int i = 0; i < length; i++)
-            {
-                stream.ReadByte();
-            }
+            string name = ((JavaConstantUtf8)constantPool[nameIndex]).Value;
 
-            return null;
+            switch (name)
+            {
+                default:
+                    return new JavaAttributeUnknown(nameIndex, length, stream.ReadBytes(length));
+            }
         }
 
         /// <summary>
@@ -293,14 +296,15 @@ namespace JavaNet.Jvm.Parser
         /// </summary>
         /// <param name="stream">The stream to read the fields from.</param>
         /// <param name="count">The number of fields to read.</param>
+        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
         /// <returns>The fields read from the stream</returns>
-        private static JavaField[] ReadFields(Stream stream, int count)
+        private static JavaField[] ReadFields(Stream stream, int count, JavaConstantPool constantPool)
         {
             JavaField[] result = new JavaField[count];
 
             for (int i = 0; i < count; i++)
             {
-                result[i] = ReadField(stream);
+                result[i] = ReadField(stream, constantPool);
             }
 
             return result;
@@ -310,14 +314,15 @@ namespace JavaNet.Jvm.Parser
         /// Reads a field from the stream.
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
+        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
         /// <returns>The field read from the stream.</returns>
-        private static JavaField ReadField(Stream stream)
+        private static JavaField ReadField(Stream stream, JavaConstantPool constantPool)
         {
             JavaFieldAccessFlags flags = (JavaFieldAccessFlags)stream.ReadShort();
             ushort nameIndex = stream.ReadShort();
             ushort descriptorIndex = stream.ReadShort();
             ushort attributesCount = stream.ReadShort();
-            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount);
+            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount, constantPool);
             return new JavaField(flags, nameIndex, descriptorIndex, attributesCount, attributes);
         }
 
@@ -326,14 +331,15 @@ namespace JavaNet.Jvm.Parser
         /// </summary>
         /// <param name="stream">The stream to read the methods from.</param>
         /// <param name="count">The number of methods to read.</param>
+        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
         /// <returns>The methods read from the stream</returns>
-        private static JavaMethod[] ReadMethods(Stream stream, int count)
+        private static JavaMethod[] ReadMethods(Stream stream, int count, JavaConstantPool constantPool)
         {
             JavaMethod[] result = new JavaMethod[count];
 
             for (int i = 0; i < count; i++)
             {
-                result[i] = ReadMethod(stream);
+                result[i] = ReadMethod(stream, constantPool);
             }
 
             return result;
@@ -343,14 +349,15 @@ namespace JavaNet.Jvm.Parser
         /// Reads a method from the stream.
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
+        /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
         /// <returns>The method read from the stream.</returns>
-        private static JavaMethod ReadMethod(Stream stream)
+        private static JavaMethod ReadMethod(Stream stream, JavaConstantPool constantPool)
         {
             JavaMethodAccessFlags flags = (JavaMethodAccessFlags)stream.ReadShort();
             ushort nameIndex = stream.ReadShort();
             ushort descriptorIndex = stream.ReadShort();
             ushort attributesCount = stream.ReadShort();
-            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount);
+            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount, constantPool);
             return new JavaMethod(flags, nameIndex, descriptorIndex, attributesCount, attributes);
         }
     }

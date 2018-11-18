@@ -27,6 +27,24 @@ namespace JavaNet.Jvm.Parser
         }
 
         /// <summary>
+        /// Reads a number of bytes from a stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <param name="amount">The amount of bytes to read.</param>
+        /// <returns>An array of bytes read from the stream.</returns>
+        internal static byte[] ReadBytes(this Stream stream, uint amount)
+        {
+            byte[] result = new byte[amount];
+
+            for (int i = 0; i < amount; i++)
+            {
+                result[i] = (byte)stream.ReadByte();
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Reads an unsigned long from the stream.
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
