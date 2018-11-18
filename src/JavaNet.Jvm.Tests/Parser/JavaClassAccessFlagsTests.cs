@@ -7,7 +7,7 @@ namespace JavaNet.Jvm.Tests.Parser
     /// <summary>
     /// Test class for the <see cref="JavaClassAccessFlags"/> class.
     /// </summary>
-    public static class JavaAccessFlagsTests
+    public static class JavaClassAccessFlagsTests
     {
         /// <summary>
         /// Checks that all values are correct.
