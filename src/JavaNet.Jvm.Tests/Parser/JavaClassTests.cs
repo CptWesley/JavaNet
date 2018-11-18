@@ -21,6 +21,7 @@ namespace JavaNet.Jvm.Tests.Parser
             using (Stream stream = Resource.Get("HelloWorld.class"))
             {
                 JavaClass jc = JavaClass.Create(stream);
+                AssertThat(stream.Position).IsEqualTo(stream.Length);
                 AssertThat(jc.Magic).IsEqualTo(0xCAFEBABE);
                 AssertThat(jc.AccessFlags).IsEqualTo(JavaClassAccessFlags.Public | JavaClassAccessFlags.Super);
                 AssertThat(jc.FieldsCount).IsEqualTo(0);
@@ -29,7 +30,9 @@ namespace JavaNet.Jvm.Tests.Parser
                     .IsEqualTo("HelloWorld");
                 AssertThat(((JavaConstantUtf8)jc.ConstantPool[((JavaConstantClass)jc.ConstantPool[jc.SuperClassIndex]).NameIndex]).Value)
                     .IsEqualTo("java/lang/Object");
-                AssertThat(stream.Position).IsEqualTo(stream.Length);
+                AssertThat(jc.MethodsCount).IsEqualTo(2);
+                AssertThat(((JavaConstantUtf8)jc.ConstantPool[jc.Methods[0].NameIndex]).Value).IsEqualTo("<init>");
+                AssertThat(((JavaConstantUtf8)jc.ConstantPool[jc.Methods[1].NameIndex]).Value).IsEqualTo("main");
             }
         }
     }
