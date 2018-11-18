@@ -1,13 +1,17 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
+using JavaNet.Jvm.Parser.Attributes;
 using JavaNet.Jvm.Parser.Constants;
+using JavaNet.Jvm.Parser.Fields;
+using JavaNet.Jvm.Parser.Methods;
 
 namespace JavaNet.Jvm.Parser
 {
     /// <summary>
     /// Class representing a parsed java .class file.
     /// </summary>
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Easier to work with.")]
     public class JavaClass
     {
         /// <summary>
@@ -95,7 +99,6 @@ namespace JavaNet.Jvm.Parser
         /// <value>
         /// The indices of interfaces in the constant pool.
         /// </value>
-        [SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Easier to work with.")]
         public ushort[] Interfaces { get; private set; }
 
         /// <summary>
@@ -105,6 +108,46 @@ namespace JavaNet.Jvm.Parser
         /// The fields count.
         /// </value>
         public ushort FieldsCount { get; private set; }
+
+        /// <summary>
+        /// Gets the fields.
+        /// </summary>
+        /// <value>
+        /// The fields.
+        /// </value>
+        public JavaField[] Fields { get; private set; }
+
+        /// <summary>
+        /// Gets the method count.
+        /// </summary>
+        /// <value>
+        /// The method count.
+        /// </value>
+        public ushort MethodsCount { get; private set; }
+
+        /// <summary>
+        /// Gets the methods.
+        /// </summary>
+        /// <value>
+        /// The methods.
+        /// </value>
+        public JavaMethod[] Methods { get; private set; }
+
+        /// <summary>
+        /// Gets the attributes count.
+        /// </summary>
+        /// <value>
+        /// The attributes count.
+        /// </value>
+        public ushort AttributesCount { get; private set; }
+
+        /// <summary>
+        /// Gets the attributes.
+        /// </summary>
+        /// <value>
+        /// The attributes.
+        /// </value>
+        public IJavaAttribute[] Attributes { get; private set; }
 
         /// <summary>
         /// Creates a <see cref="JavaClass"/> instance from bytes.
@@ -138,6 +181,11 @@ namespace JavaNet.Jvm.Parser
             result.InterfacesCount = stream.ReadShort();
             result.Interfaces = stream.ReadShorts(result.InterfacesCount);
             result.FieldsCount = stream.ReadShort();
+            result.Fields = ReadFields(stream, result.FieldsCount);
+            result.MethodsCount = stream.ReadShort();
+            result.Methods = ReadMethods(stream, result.MethodsCount);
+            result.AttributesCount = stream.ReadShort();
+            result.Attributes = ReadAttributes(stream, result.AttributesCount);
 
             return result;
         }
@@ -203,6 +251,107 @@ namespace JavaNet.Jvm.Parser
                 default:
                     throw new JavaParserException($"Illegal constant pool tag '{tag}' was found.");
             }
+        }
+
+        /// <summary>
+        /// Reads attributes from the stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <param name="count">The number of attributes to read.</param>
+        /// <returns>The attributes from the stream.</returns>
+        private static IJavaAttribute[] ReadAttributes(Stream stream, int count)
+        {
+            IJavaAttribute[] result = new IJavaAttribute[count];
+
+            for (int i = 0; i < count - 1; i++)
+            {
+                result[i] = ReadAttribute(stream);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reads an attribute from the given stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <returns>The attribute read from the stream.</returns>
+        private static IJavaAttribute ReadAttribute(Stream stream)
+        {
+            ushort nameIndex = stream.ReadShort();
+            uint length = stream.ReadInteger();
+            for (int i = 0; i < length; i++)
+            {
+                stream.ReadByte();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Reads fields from the stream.
+        /// </summary>
+        /// <param name="stream">The stream to read the fields from.</param>
+        /// <param name="count">The number of fields to read.</param>
+        /// <returns>The fields read from the stream</returns>
+        private static JavaField[] ReadFields(Stream stream, int count)
+        {
+            JavaField[] result = new JavaField[count];
+
+            for (int i = 0; i < count - 1; i++)
+            {
+                result[i] = ReadField(stream);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reads a field from the stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <returns>The field read from the stream.</returns>
+        private static JavaField ReadField(Stream stream)
+        {
+            JavaFieldAccessFlags flags = (JavaFieldAccessFlags)stream.ReadShort();
+            ushort nameIndex = stream.ReadShort();
+            ushort descriptorIndex = stream.ReadShort();
+            ushort attributesCount = stream.ReadShort();
+            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount);
+            return new JavaField(flags, nameIndex, descriptorIndex, attributesCount, attributes);
+        }
+
+        /// <summary>
+        /// Reads methods from the stream.
+        /// </summary>
+        /// <param name="stream">The stream to read the methods from.</param>
+        /// <param name="count">The number of methods to read.</param>
+        /// <returns>The methods read from the stream</returns>
+        private static JavaMethod[] ReadMethods(Stream stream, int count)
+        {
+            JavaMethod[] result = new JavaMethod[count];
+
+            for (int i = 0; i < count - 1; i++)
+            {
+                result[i] = ReadMethod(stream);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reads a method from the stream.
+        /// </summary>
+        /// <param name="stream">The stream to read from.</param>
+        /// <returns>The method read from the stream.</returns>
+        private static JavaMethod ReadMethod(Stream stream)
+        {
+            JavaMethodAccessFlags flags = (JavaMethodAccessFlags)stream.ReadShort();
+            ushort nameIndex = stream.ReadShort();
+            ushort descriptorIndex = stream.ReadShort();
+            ushort attributesCount = stream.ReadShort();
+            IJavaAttribute[] attributes = ReadAttributes(stream, attributesCount);
+            return new JavaMethod(flags, nameIndex, descriptorIndex, attributesCount, attributes);
         }
     }
 }
