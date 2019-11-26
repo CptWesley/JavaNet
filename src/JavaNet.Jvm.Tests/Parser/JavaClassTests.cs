@@ -3,7 +3,7 @@ using CoreResourceManager;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Constants;
 using Xunit;
-using static AssertNet.Xunit.Assertions;
+using static AssertNet.Assertions;
 
 namespace JavaNet.Jvm.Tests.Parser
 {
@@ -34,6 +34,12 @@ namespace JavaNet.Jvm.Tests.Parser
                 AssertThat(((JavaConstantUtf8)jc.ConstantPool[jc.Methods[0].NameIndex]).Value).IsEqualTo("<init>");
                 AssertThat(((JavaConstantUtf8)jc.ConstantPool[jc.Methods[1].NameIndex]).Value).IsEqualTo("main");
             }
+        }
+
+        [Fact]
+        public static void Bla()
+        {
+            throw new System.Exception(new Interpreter.ClassConverter().Convert(JavaClass.Create(Resource.Get("HelloWorld.class"))));
         }
     }
 }

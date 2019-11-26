@@ -1,6 +1,6 @@
 ﻿using JavaNet.Jvm.Parser.Methods;
 using Xunit;
-using static AssertNet.Xunit.Assertions;
+using static AssertNet.Assertions;
 
 namespace JavaNet.Jvm.Tests.Parser.Methods
 {

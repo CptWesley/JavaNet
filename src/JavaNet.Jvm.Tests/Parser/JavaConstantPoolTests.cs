@@ -2,7 +2,7 @@
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Constants;
 using Xunit;
-using static AssertNet.Xunit.Assertions;
+using static AssertNet.Assertions;
 
 namespace JavaNet.Jvm.Tests.Parser
 {
