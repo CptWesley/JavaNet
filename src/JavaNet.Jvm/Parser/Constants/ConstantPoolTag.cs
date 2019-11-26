@@ -74,8 +74,23 @@ namespace JavaNet.Jvm.Parser.Constants
         MethodType = 16,
 
         /// <summary>
+        /// The dynamic constant tag.
+        /// </summary>
+        Dynamic = 17,
+
+        /// <summary>
         /// The invoke dynamic constant tag.
         /// </summary>
         InvokeDynamic = 18,
+
+        /// <summary>
+        /// The module constant tag.
+        /// </summary>
+        Module = 19,
+
+        /// <summary>
+        /// The package constant tag.
+        /// </summary>
+        Package = 20,
     }
 }

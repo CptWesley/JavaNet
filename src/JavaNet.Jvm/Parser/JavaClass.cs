@@ -249,8 +249,14 @@ namespace JavaNet.Jvm.Parser
                     return new JavaConstantMethodHandle((ReferenceKind)stream.ReadByte(), stream.ReadShort());
                 case 16:
                     return new JavaConstantMethodType(stream.ReadShort());
+                case 17:
+                    return new JavaConstantDynamic(stream.ReadShort(), stream.ReadShort());
                 case 18:
                     return new JavaConstantInvokeDynamic(stream.ReadShort(), stream.ReadShort());
+                case 19:
+                    return new JavaConstantModule(stream.ReadShort());
+                case 20:
+                    return new JavaConstantPackage(stream.ReadShort());
                 default:
                     throw new JavaParserException($"Illegal constant pool tag '{tag}' was found.");
             }
