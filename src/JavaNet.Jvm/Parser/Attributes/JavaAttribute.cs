@@ -99,6 +99,12 @@ namespace JavaNet.Jvm.Parser.Attributes
                 // case "AnnotationDefault":
                 case "MethodParameters":
                     return JavaAttributeMethodParameters.ReadFromStream(nameIndex, length, stream);
+
+                // case "Module":
+                // case "ModulePackages":
+                // case "ModuleMainClass":
+                // case "NestHost":
+                // case "NestMembers":
                 default:
                     return new JavaAttributeUnknown(nameIndex, length, stream.ReadBytes(length));
             }
