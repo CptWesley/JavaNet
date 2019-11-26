@@ -44,8 +44,13 @@ namespace JavaNet.Jvm.Parser
         Annotation = 0x2000,
 
         /// <summary>
-        /// Indicates the class in an enum.
+        /// Indicates the class is an enum.
         /// </summary>
         Enum = 0x4000,
+
+        /// <summary>
+        /// Indicates the class is a module.
+        /// </summary>
+        Module = 0x8000,
     }
 }
