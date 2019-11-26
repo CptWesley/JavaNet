@@ -5,6 +5,7 @@ using JavaNet.Jvm.Parser.Attributes;
 using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Parser.Fields;
 using JavaNet.Jvm.Parser.Methods;
+using JavaNet.Jvm.Util;
 
 namespace JavaNet.Jvm.Parser
 {
@@ -169,6 +170,8 @@ namespace JavaNet.Jvm.Parser
         /// <returns>A new <see cref="JavaClass"/> instance.</returns>
         public static JavaClass Create(Stream stream)
         {
+            Guard.NotNull(ref stream, nameof(stream));
+
             JavaClass result = new JavaClass();
             result.Magic = stream.ReadInteger();
             result.MinorVersion = stream.ReadShort();
