@@ -51,6 +51,6 @@ namespace JavaNet.Jvm.Parser.Fields
         /// <summary>
         /// Indicates the field is an enum.
         /// </summary>
-        Enum = 0x4000
+        Enum = 0x4000,
     }
 }

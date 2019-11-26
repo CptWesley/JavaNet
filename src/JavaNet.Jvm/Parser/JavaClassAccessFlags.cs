@@ -46,6 +46,6 @@ namespace JavaNet.Jvm.Parser
         /// <summary>
         /// Indicates the class in an enum.
         /// </summary>
-        Enum = 0x4000
+        Enum = 0x4000,
     }
 }

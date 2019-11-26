@@ -48,6 +48,6 @@
         /// <summary>
         /// Invoke a method on an interface.
         /// </summary>
-        InvokeInterface = 9
+        InvokeInterface = 9,
     }
 }

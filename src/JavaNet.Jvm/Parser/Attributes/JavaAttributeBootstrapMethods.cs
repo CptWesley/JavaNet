@@ -45,7 +45,7 @@ namespace JavaNet.Jvm.Parser.Attributes
         public JavaBootstrapMethod[] BootstrapMethods { get; }
 
         /// <summary>
-        /// Reads this attributes from the stream
+        /// Reads this attributes from the stream.
         /// </summary>
         /// <param name="nameIndex">Index of the name.</param>
         /// <param name="length">The length.</param>

@@ -6,7 +6,7 @@ using static AssertNet.Assertions;
 namespace JavaNet.Jvm.Tests.Parser.Fields
 {
     /// <summary>
-    /// Test class for the <see cref="JavaField" /> class
+    /// Test class for the <see cref="JavaField" /> class.
     /// </summary>
     public static class JavaFieldTests
     {

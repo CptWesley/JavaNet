@@ -66,6 +66,6 @@ namespace JavaNet.Jvm.Parser.Methods
         /// <summary>
         /// Indicates a synthetic method.
         /// </summary>
-        Synthetic = 0x1000
+        Synthetic = 0x1000,
     }
 }

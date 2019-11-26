@@ -22,7 +22,7 @@ namespace JavaNet.Jvm.Parser
         }
 
         /// <summary>
-        /// Gets the magic number at the start of the file. This should always be 0xCAFEBABE
+        /// Gets the magic number at the start of the file. This should always be 0xCAFEBABE.
         /// </summary>
         /// <value>
         /// The magic number at the start of the file.
@@ -259,7 +259,7 @@ namespace JavaNet.Jvm.Parser
         /// <param name="stream">The stream to read the fields from.</param>
         /// <param name="count">The number of fields to read.</param>
         /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
-        /// <returns>The fields read from the stream</returns>
+        /// <returns>The fields read from the stream.</returns>
         private static JavaField[] ReadFields(Stream stream, int count, JavaConstantPool constantPool)
         {
             JavaField[] result = new JavaField[count];
@@ -294,7 +294,7 @@ namespace JavaNet.Jvm.Parser
         /// <param name="stream">The stream to read the methods from.</param>
         /// <param name="count">The number of methods to read.</param>
         /// <param name="constantPool">The constant pool used for finding the attribute names.</param>
-        /// <returns>The methods read from the stream</returns>
+        /// <returns>The methods read from the stream.</returns>
         private static JavaMethod[] ReadMethods(Stream stream, int count, JavaConstantPool constantPool)
         {
             JavaMethod[] result = new JavaMethod[count];

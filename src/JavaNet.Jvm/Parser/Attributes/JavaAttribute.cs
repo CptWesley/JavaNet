@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using JavaNet.Jvm.Parser.Constants;
+using JavaNet.Jvm.Util;
 
 namespace JavaNet.Jvm.Parser.Attributes
 {
@@ -45,6 +46,9 @@ namespace JavaNet.Jvm.Parser.Attributes
         /// <returns>An array of attributes read from the stream.</returns>
         public static IJavaAttribute[] ReadFromStream(Stream stream, int count, JavaConstantPool constantPool)
         {
+            Guard.NotNull(ref stream, nameof(stream));
+            Guard.NotNull(ref constantPool, nameof(constantPool));
+
             IJavaAttribute[] result = new IJavaAttribute[count];
 
             for (int i = 0; i < count; i++)

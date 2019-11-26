@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using JavaNet.Jvm.Util;
 
 namespace JavaNet.Jvm.Parser.Attributes
 {
@@ -120,6 +121,9 @@ namespace JavaNet.Jvm.Parser.Attributes
         /// <returns>Code attribute read from the stream.</returns>
         public static JavaAttributeCode ReadFromStream(Stream stream, JavaConstantPool constantPool, ushort nameIndex, uint length)
         {
+            Guard.NotNull(ref stream, nameof(stream));
+            Guard.NotNull(ref constantPool, nameof(constantPool));
+
             ushort maxStack = stream.ReadShort();
             ushort maxLocal = stream.ReadShort();
             uint codeLength = stream.ReadInteger();

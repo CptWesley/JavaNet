@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using JavaNet.Jvm.Util;
 
 namespace JavaNet.Jvm.Parser.Attributes
 {
@@ -49,6 +50,8 @@ namespace JavaNet.Jvm.Parser.Attributes
         /// <returns>The attribute from the stream.</returns>
         public static JavaAttributeMethodParameters ReadFromStream(ushort nameIndex, uint length, Stream stream)
         {
+            Guard.NotNull(ref stream, nameof(stream));
+
             byte count = (byte)stream.ReadByte();
             JavaParameter[] parameters = new JavaParameter[count];
             for (int i = 0; i < count; i++)

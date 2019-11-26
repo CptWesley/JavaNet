@@ -76,6 +76,6 @@ namespace JavaNet.Jvm.Parser.Constants
         /// <summary>
         /// The invoke dynamic constant tag.
         /// </summary>
-        InvokeDynamic = 18
+        InvokeDynamic = 18,
     }
 }

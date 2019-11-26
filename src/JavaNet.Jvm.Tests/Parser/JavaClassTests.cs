@@ -35,11 +35,5 @@ namespace JavaNet.Jvm.Tests.Parser
                 AssertThat(((JavaConstantUtf8)jc.ConstantPool[jc.Methods[1].NameIndex]).Value).IsEqualTo("main");
             }
         }
-
-        [Fact]
-        public static void Bla()
-        {
-            throw new System.Exception(new Interpreter.ClassConverter().Convert(JavaClass.Create(Resource.Get("HelloWorld.class"))));
-        }
     }
 }

@@ -11,7 +11,7 @@ namespace JavaNet.Jvm.Tests.Parser
     /// </summary>
     public class JavaConstantPoolTests
     {
-        private JavaConstantPool _jcp;
+        private readonly JavaConstantPool _jcp;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JavaConstantPoolTests"/> class.

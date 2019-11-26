@@ -6,7 +6,7 @@ using static AssertNet.Assertions;
 namespace JavaNet.Jvm.Tests.Parser.Methods
 {
     /// <summary>
-    /// Test class for the <see cref="JavaMethod" /> class
+    /// Test class for the <see cref="JavaMethod" /> class.
     /// </summary>
     public static class JavaMethodTests
     {
