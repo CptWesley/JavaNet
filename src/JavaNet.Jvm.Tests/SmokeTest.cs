@@ -22,23 +22,21 @@ namespace JavaNet.Jvm.Tests
         [Fact]
         public void HelloWorld()
         {
-            using (Stream stream = Resource.Get("HelloWorld.class"))
+            using Stream stream = Resource.Get("HelloWorld.class");
+            JavaClass jc = JavaClass.Create(stream);
+            StringBuilder sb = new StringBuilder();
+            foreach (JavaMethod method in jc.Methods)
             {
-                JavaClass jc = JavaClass.Create(stream);
-                StringBuilder sb = new StringBuilder();
-                foreach (JavaMethod method in jc.Methods)
+                sb.AppendLine();
+                sb.AppendLine($"method {((JavaConstantUtf8)jc.ConstantPool[method.NameIndex]).Value}");
+                JavaAttributeCode code = GetCode(method);
+                foreach (byte b in code.Code)
                 {
-                    sb.AppendLine();
-                    sb.AppendLine($"method {((JavaConstantUtf8)jc.ConstantPool[method.NameIndex]).Value}");
-                    JavaAttributeCode code = GetCode(method);
-                    foreach (byte b in code.Code)
-                    {
-                        sb.AppendLine(((JavaOpCode)b).ToString());
-                    }
+                    sb.AppendLine(((JavaOpCode)b).ToString());
                 }
-
-                throw new Exception(sb.ToString());
             }
+
+            throw new Exception(sb.ToString());
         }
 
         private JavaAttributeCode GetCode(JavaMethod method)
