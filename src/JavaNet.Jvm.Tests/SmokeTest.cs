@@ -2,14 +2,12 @@
 using System.IO;
 using System.Text;
 using CoreResourceManager;
-using JavaNet.Jvm.Interpreter;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Attributes;
 using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Parser.Methods;
-using JavaNet.Jvm.Tests.Parser.Methods;
+using JavaNet.Jvm.Parser.OpCodes;
 using Xunit;
-using static AssertNet.Assertions;
 
 namespace JavaNet.Jvm.Tests
 {

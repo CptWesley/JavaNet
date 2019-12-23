@@ -1,4 +1,4 @@
-﻿namespace JavaNet.Jvm.Tests.Parser.Methods
+﻿namespace JavaNet.Jvm.Parser.OpCodes
 {
     /// <summary>
     /// Java op codes.
