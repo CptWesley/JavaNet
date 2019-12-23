@@ -22,22 +22,54 @@ namespace JavaNet.Jvm.Tests
         [Fact]
         public void HelloWorld()
         {
-            using Stream stream = Resource.Get("HelloWorld.class");
+            using Stream stream = Resource.Get("Hello42.class");
             JavaClass jc = JavaClass.Create(stream);
             StringBuilder sb = new StringBuilder();
             foreach (JavaMethod method in jc.Methods)
             {
                 sb.AppendLine();
                 sb.AppendLine($"method {((JavaConstantUtf8)jc.ConstantPool[method.NameIndex]).Value}");
-                JavaAttributeCode code = GetCode(method);
-                foreach (byte b in code.Code)
+                byte[] code = GetCode(method).Code;
+                for (int i = 0; i < code.Length; i++)
                 {
-                    sb.AppendLine(((JavaOpCode)b).ToString());
+                    JavaOpCode op = (JavaOpCode)code[i];
+                    string printed = op.ToString();
+
+                    switch (op)
+                    {
+                        case JavaOpCode.GetStatic:
+                            JavaConstantFieldReference fieldRef = (JavaConstantFieldReference)jc.ConstantPool[GetIndex(code[++i], code[++i])];
+                            JavaConstantClass c = (JavaConstantClass)jc.ConstantPool[fieldRef.ClassIndex];
+                            JavaConstantUtf8 className = (JavaConstantUtf8)jc.ConstantPool[c.NameIndex];
+                            JavaConstantNameAndType nameAndType = (JavaConstantNameAndType)jc.ConstantPool[fieldRef.NameAndTypeIndex];
+                            JavaConstantUtf8 fieldName = (JavaConstantUtf8)jc.ConstantPool[nameAndType.NameIndex];
+                            JavaConstantUtf8 descriptor = (JavaConstantUtf8)jc.ConstantPool[nameAndType.DescriptorIndex];
+                            printed = $"{printed} {className.Value}/{fieldName.Value} {descriptor.Value}";
+                            break;
+                        case JavaOpCode.InvokeVirtual:
+                        case JavaOpCode.InvokeSpecial:
+                            JavaConstantMethodReference methodRef = (JavaConstantMethodReference)jc.ConstantPool[GetIndex(code[++i], code[++i])];
+                            JavaConstantClass c2 = (JavaConstantClass)jc.ConstantPool[methodRef.ClassIndex];
+                            JavaConstantUtf8 className2 = (JavaConstantUtf8)jc.ConstantPool[c2.NameIndex];
+                            JavaConstantNameAndType nameAndType2 = (JavaConstantNameAndType)jc.ConstantPool[methodRef.NameAndTypeIndex];
+                            JavaConstantUtf8 methodName = (JavaConstantUtf8)jc.ConstantPool[nameAndType2.NameIndex];
+                            JavaConstantUtf8 descriptor2 = (JavaConstantUtf8)jc.ConstantPool[nameAndType2.DescriptorIndex];
+                            printed = $"{printed} {className2.Value}/{methodName.Value}{descriptor2.Value}";
+                            break;
+                        case JavaOpCode.BiPush:
+                            printed = $"{printed} {code[++i]}";
+                            break;
+                    }
+
+                    sb.AppendLine(printed);
                 }
             }
 
             throw new Exception(sb.ToString());
         }
+
+        private int GetIndex(byte i1, byte i2)
+            => (i1 << 8) | i2;
 
         private JavaAttributeCode GetCode(JavaMethod method)
         {
