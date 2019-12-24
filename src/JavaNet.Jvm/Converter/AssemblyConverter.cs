@@ -96,7 +96,7 @@ namespace JavaNet.Jvm.Converter
 
         private static MethodDefinition ConvertMethod(AssemblyDefinition assembly, JavaClass jc, JavaMethod jm)
         {
-            string name = GetDotNetFullName(jm.GetMethodName(jc));
+            string name = GetDotNetFullName(jm.GetName(jc));
             MethodAttributes attributes = jm.GetAttributes();
 
             if (name == "<init>" || name == "<clinit>")

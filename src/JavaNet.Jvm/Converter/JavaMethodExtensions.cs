@@ -65,7 +65,7 @@ namespace JavaNet.Jvm.Converter
         /// <param name="jm">The java method.</param>
         /// <param name="jc">The java class.</param>
         /// <returns>The name of the java method.</returns>
-        public static string GetMethodName(this JavaMethod jm, JavaClass jc)
+        public static string GetName(this JavaMethod jm, JavaClass jc)
         {
             Guard.NotNull(ref jc, nameof(jc));
             Guard.NotNull(ref jm, nameof(jm));
