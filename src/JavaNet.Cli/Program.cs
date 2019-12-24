@@ -1,18 +1,16 @@
 ﻿using JavaNet.Jvm.Converter;
 using JavaNet.Jvm.Parser;
-using JavaNet.Jvm.Parser.Constants;
 using Mono.Cecil;
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
-using System.Text;
 
 namespace JavaNet.Cli
 {
     class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
             
             string dir = "C:/Users/Wesley/Desktop/New folder (3)/";

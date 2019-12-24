@@ -1,8 +1,8 @@
-﻿using JavaNet.Jvm.Parser;
+﻿using System.Linq;
+using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Util;
 using Mono.Cecil;
-using System.Linq;
 
 namespace JavaNet.Jvm.Converter
 {

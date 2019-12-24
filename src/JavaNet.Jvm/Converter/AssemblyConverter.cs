@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using JavaNet.Jvm.Parser;
-using JavaNet.Jvm.Parser.Constants;
+using JavaNet.Jvm.Parser.Fields;
 using JavaNet.Jvm.Parser.Methods;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -72,6 +71,11 @@ namespace JavaNet.Jvm.Converter
                     {
                         definition.Methods.Add(ConvertMethod(assembly, jc, jm));
                     }
+
+                    foreach (JavaField jf in jc.Fields)
+                    {
+                        definition.Fields.Add(ConvertField(assembly, jc, jf));
+                    }
                 }
 
                 return AssemblyDefinitionToBytes(assembly);
@@ -91,6 +95,14 @@ namespace JavaNet.Jvm.Converter
         {
             string className = $"{jc.GetPackageName()}{jc.GetName()}";
             TypeDefinition result = new TypeDefinition(GetDotNetNamespace(className), GetDotNetClassName(className), jc.GetAttributes());
+            return result;
+        }
+
+        private static FieldDefinition ConvertField(AssemblyDefinition assembly, JavaClass jc, JavaField jf)
+        {
+            string name = jf.GetName(jc);
+            FieldAttributes attributes = jf.GetAttributes();
+            FieldDefinition result = new FieldDefinition(name, attributes, GetDescriptorType(assembly.MainModule, jf.GetDescriptor(jc)));
             return result;
         }
 
