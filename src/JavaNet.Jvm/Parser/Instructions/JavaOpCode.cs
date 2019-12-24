@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace JavaNet.Jvm.Parser.OpCodes
+namespace JavaNet.Jvm.Parser.Instructions
 {
     /// <summary>
     /// Java op codes.

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using CoreResourceManager;
+using JavaNet.Jvm.Converter;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Attributes;
 using JavaNet.Jvm.Parser.Constants;
+using JavaNet.Jvm.Parser.Instructions;
 using JavaNet.Jvm.Parser.Methods;
-using JavaNet.Jvm.Parser.OpCodes;
 using Xunit;
 
 namespace JavaNet.Jvm.Tests
@@ -22,13 +24,14 @@ namespace JavaNet.Jvm.Tests
         [Fact]
         public void HelloWorld()
         {
-            using Stream stream = Resource.Get("Hello42.class");
+            using Stream stream = Resource.Get("HelloWorld.class");
             JavaClass jc = JavaClass.Create(stream);
             StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"class {jc.GetPackageName()}.{jc.GetName()} : {jc.SuperClassIndex}");
             foreach (JavaMethod method in jc.Methods)
             {
                 sb.AppendLine();
-                sb.AppendLine($"method {((JavaConstantUtf8)jc.ConstantPool[method.NameIndex]).Value}");
+                sb.AppendLine($"method {((JavaConstantUtf8)jc.ConstantPool[method.NameIndex]).Value}{((JavaConstantUtf8)jc.ConstantPool[method.DescriptorIndex]).Value}");
                 byte[] code = GetCode(method).Code;
                 for (int i = 0; i < code.Length; i++)
                 {
@@ -59,6 +62,11 @@ namespace JavaNet.Jvm.Tests
                         case JavaOpCode.BiPush:
                             printed = $"{printed} {code[++i]}";
                             break;
+                        case JavaOpCode.Ldc:
+                            JavaConstantString str = (JavaConstantString)jc.ConstantPool[code[++i]];
+                            JavaConstantUtf8 strVal = (JavaConstantUtf8)jc.ConstantPool[str.StringIndex];
+                            printed = $"{printed} \"{strVal.Value}\"";
+                            break;
                     }
 
                     sb.AppendLine(printed);
@@ -82,6 +90,23 @@ namespace JavaNet.Jvm.Tests
             }
 
             throw new Exception("No code attribute found.");
+        }
+
+        [Fact]
+        public void Loading()
+        {
+            AssemblyConverter converter = new AssemblyConverter("HelloWorld");
+            using Stream stream = Resource.Get("HelloWorld.class");
+            JavaClass jc = JavaClass.Create(stream);
+            converter.Include(jc);
+            byte[] bytes = converter.Convert();
+            Assembly assembly = Assembly.Load(bytes);
+            StringBuilder sb = new StringBuilder();
+            foreach (Type t in assembly.GetTypes())
+            {
+                sb.AppendLine($"Type: {t.FullName}");
+            }
+            throw new Exception(sb.ToString());
         }
     }
 }
