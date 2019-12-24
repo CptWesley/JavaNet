@@ -51,6 +51,11 @@ namespace JavaNet.Jvm.Converter
                 result |= MethodAttributes.Private;
             }
 
+            if (accessFlags.HasFlag(JavaMethodAccessFlags.Protected))
+            {
+                result |= MethodAttributes.Family;
+            }
+
             if (accessFlags.HasFlag(JavaMethodAccessFlags.Static))
             {
                 result |= MethodAttributes.Static;
