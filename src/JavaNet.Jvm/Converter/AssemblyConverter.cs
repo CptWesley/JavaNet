@@ -221,8 +221,7 @@ namespace JavaNet.Jvm.Converter
                 case 'Z':
                     return types.Boolean;
                 case '[':
-                    // TODO: handle arrays correctly.
-                    return GetDescriptorType(module, javaTypeName.Substring(1));
+                    return new ArrayType(GetDescriptorType(module, javaTypeName.Substring(1)));
                 default:
                     throw new Exception();
             }
