@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using JavaNet.Jvm.Parser;
-using JavaNet.Jvm.Parser.Constants;
-using Mono.Cecil;
 using System.Linq;
+using JavaNet.Jvm.Parser;
+using Mono.Cecil;
 
 namespace JavaNet.Jvm.Converter
 {
@@ -50,7 +49,7 @@ namespace JavaNet.Jvm.Converter
                 Dictionary<TypeDefinition, string> supers = new Dictionary<TypeDefinition, string>();
                 foreach (JavaClass jc in classes)
                 {
-                    assembly.MainModule.Types.Add(ConvertClass(assembly, jc, supers));
+                    assembly.MainModule.Types.Add(ConvertClass(jc, supers));
                 }
 
                 ResolveBaseTypes(assembly.MainModule, supers);
@@ -68,14 +67,8 @@ namespace JavaNet.Jvm.Converter
             }
         }
 
-        private static string ToDotNetName(string javaTypeName)
+        private static TypeDefinition ConvertClass(JavaClass jc, Dictionary<TypeDefinition, string> supers)
         {
-            return javaTypeName.Replace('/', '.');
-        }
-
-        private static TypeDefinition ConvertClass(AssemblyDefinition assembly, JavaClass jc, Dictionary<TypeDefinition, string> supers)
-        {
-            ModuleDefinition module = assembly.MainModule;
             string superName = jc.GetSuperName();
             TypeDefinition result = new TypeDefinition(jc.GetPackageName(), jc.GetName(), jc.GetTypeAttributes());
             supers.Add(result, superName);

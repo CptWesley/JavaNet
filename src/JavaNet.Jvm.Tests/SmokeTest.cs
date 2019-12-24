@@ -76,22 +76,9 @@ namespace JavaNet.Jvm.Tests
             throw new Exception(sb.ToString());
         }
 
-        private int GetIndex(byte i1, byte i2)
-            => (i1 << 8) | i2;
-
-        private JavaAttributeCode GetCode(JavaMethod method)
-        {
-            foreach (IJavaAttribute attribute in method.Attributes)
-            {
-                if (attribute is JavaAttributeCode code)
-                {
-                    return code;
-                }
-            }
-
-            throw new Exception("No code attribute found.");
-        }
-
+        /// <summary>
+        /// Loads a converted class and executes it.
+        /// </summary>
         [Fact]
         public void Loading()
         {
@@ -114,6 +101,22 @@ namespace JavaNet.Jvm.Tests
             }
 
             throw new Exception(sb.ToString());
+        }
+
+        private int GetIndex(byte i1, byte i2)
+            => (i1 << 8) | i2;
+
+        private JavaAttributeCode GetCode(JavaMethod method)
+        {
+            foreach (IJavaAttribute attribute in method.Attributes)
+            {
+                if (attribute is JavaAttributeCode code)
+                {
+                    return code;
+                }
+            }
+
+            throw new Exception("No code attribute found.");
         }
     }
 }
