@@ -50,18 +50,24 @@ namespace JavaNet.Jvm.Converter
             AssemblyNameDefinition nameDefinition = new AssemblyNameDefinition(Name, new Version(1, 0, 0, 0));
             using (AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(nameDefinition, Name, ModuleKind.Dll))
             {
+                ModuleDefinition module = assembly.MainModule;
                 Dictionary<JavaClass, TypeDefinition> definitions = new Dictionary<JavaClass, TypeDefinition>();
                 foreach (JavaClass jc in classes)
                 {
                     TypeDefinition definition = ConvertClass(jc);
                     definitions.Add(jc, definition);
-                    assembly.MainModule.Types.Add(definition);
+                    module.Types.Add(definition);
                 }
 
                 foreach (JavaClass jc in classes)
                 {
                     TypeDefinition definition = definitions[jc];
-                    definition.BaseType = ResolveBaseType(assembly.MainModule, jc);
+                    definition.BaseType = ResolveBaseType(module, jc);
+                    foreach (string interfac in jc.GetInterfaces())
+                    {
+                        definition.Interfaces.Add(new InterfaceImplementation(GetType(module, interfac)));
+                    }
+
                     foreach (JavaMethod jm in jc.Methods)
                     {
                         definition.Methods.Add(ConvertMethod(assembly, jc, jm));
