@@ -206,7 +206,12 @@ namespace JavaNet.Jvm.Parser
 
             for (int i = 0; i < count - 1; i++)
             {
-                constants[i] = ReadConstant(stream);
+                IJavaConstant constant = ReadConstant(stream);
+                constants[i] = constant;
+                if (constant is JavaConstantLong || constant is JavaConstantDouble)
+                {
+                    constants[++i] = constant; // 8byte constants take 2 entries.
+                }
             }
 
             return new JavaConstantPool(constants);
