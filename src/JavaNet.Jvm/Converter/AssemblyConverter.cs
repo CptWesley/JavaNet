@@ -94,7 +94,10 @@ namespace JavaNet.Jvm.Converter
             {
                 if (pair.Value == "java/lang/Object")
                 {
-                    pair.Key.BaseType = module.TypeSystem.Object;
+                    if (!pair.Key.Attributes.HasFlag(TypeAttributes.Interface))
+                    {
+                        pair.Key.BaseType = module.TypeSystem.Object;
+                    }
                 }
                 else
                 {
