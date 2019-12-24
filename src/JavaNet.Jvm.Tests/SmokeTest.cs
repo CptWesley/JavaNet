@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using CoreResourceManager;
@@ -117,6 +118,31 @@ namespace JavaNet.Jvm.Tests
             }
 
             throw new Exception("No code attribute found.");
+        }
+
+        [Fact]
+        public void Bla()
+        {
+            string file = "C:/Users/Wesley/Desktop/New folder (3)/rt.jar";
+            using ZipArchive archive = ZipFile.OpenRead(file);
+            AssemblyConverter converter = new AssemblyConverter("Rt");
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                using Stream stream = entry.Open();
+                JavaClass jc = JavaClass.Create(stream);
+                converter.Include(jc);
+            }
+
+            byte[] bytes = converter.Convert();
+            Assembly assembly = Assembly.Load(bytes);
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine();
+            foreach (Type t in assembly.GetTypes())
+            {
+                sb.AppendLine($"Type: {t.FullName}");
+            }
+
+            throw new Exception(sb.ToString());
         }
     }
 }
