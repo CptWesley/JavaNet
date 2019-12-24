@@ -209,7 +209,7 @@ namespace JavaNet.Jvm.Converter
                 case 'D':
                     return types.Double;
                 case 'F':
-                    return types.Double;
+                    return types.Single;
                 case 'I':
                     return types.Int32;
                 case 'J':
