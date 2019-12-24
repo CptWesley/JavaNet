@@ -35,11 +35,11 @@ namespace JavaNet.Cli
             }
 
             byte[] bytes = converter.Convert();
+            File.WriteAllBytes("rt.dll", bytes);
             foreach (Type type in Assembly.Load(bytes).GetTypes())
             {
                 Console.WriteLine($"Type: {type.FullName}");
             }
-            File.WriteAllBytes("rt.dll", bytes);
         }
 
         private static TypeReference DuplicateDefinition(AssemblyDefinition assembly, TypeDefinition type, TypeReference baseType)

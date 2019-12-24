@@ -4,7 +4,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using JavaNet.Jvm.Parser;
+using JavaNet.Jvm.Parser.Constants;
+using JavaNet.Jvm.Parser.Methods;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace JavaNet.Jvm.Converter
 {
@@ -47,13 +50,23 @@ namespace JavaNet.Jvm.Converter
             AssemblyNameDefinition nameDefinition = new AssemblyNameDefinition(Name, new Version(1, 0, 0, 0));
             using (AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(nameDefinition, Name, ModuleKind.Dll))
             {
-                Dictionary<TypeDefinition, string> supers = new Dictionary<TypeDefinition, string>();
+                Dictionary<JavaClass, TypeDefinition> definitions = new Dictionary<JavaClass, TypeDefinition>();
                 foreach (JavaClass jc in classes)
                 {
-                    assembly.MainModule.Types.Add(ConvertClass(jc, supers));
+                    TypeDefinition definition = ConvertClass(jc);
+                    definitions.Add(jc, definition);
+                    assembly.MainModule.Types.Add(definition);
                 }
 
-                ResolveBaseTypes(assembly.MainModule, supers);
+                foreach (JavaClass jc in classes)
+                {
+                    TypeDefinition definition = definitions[jc];
+                    definition.BaseType = ResolveBaseType(assembly.MainModule, jc);
+                    foreach (JavaMethod jm in jc.Methods)
+                    {
+                        definition.Methods.Add(ConvertMethod(assembly, jc, jm));
+                    }
+                }
 
                 return AssemblyDefinitionToBytes(assembly);
             }
@@ -68,12 +81,32 @@ namespace JavaNet.Jvm.Converter
             }
         }
 
-        private static TypeDefinition ConvertClass(JavaClass jc, Dictionary<TypeDefinition, string> supers)
+        private static TypeDefinition ConvertClass(JavaClass jc)
         {
             string className = $"{jc.GetPackageName()}{jc.GetName()}";
-            string superName = jc.GetSuperName();
-            TypeDefinition result = new TypeDefinition(GetDotNetNamespace(className), GetDotNetClassName(className), jc.GetTypeAttributes());
-            supers.Add(result, superName);
+            TypeDefinition result = new TypeDefinition(GetDotNetNamespace(className), GetDotNetClassName(className), jc.GetAttributes());
+            return result;
+        }
+
+        private static MethodDefinition ConvertMethod(AssemblyDefinition assembly, JavaClass jc, JavaMethod jm)
+        {
+            TypeReference returnType = GetDescriptorType(assembly.MainModule, jm.GetReturnType(jc));
+            MethodDefinition result = new MethodDefinition(GetDotNetFullName(jm.GetMethodName(jc)), jm.GetAttributes(), returnType);
+
+            string[] parameterTypes = jm.GetParameterTypes(jc);
+            string[] parameterNames = jm.GetParameterNames(jc);
+
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                result.Parameters.Add(new ParameterDefinition(parameterNames[i], ParameterAttributes.None, GetDescriptorType(assembly.MainModule, parameterTypes[i])));
+            }
+
+            ILProcessor il = result.Body?.GetILProcessor();
+            if (il != null)
+            {
+                il.Append(il.Create(OpCodes.Ret));
+            }
+
             return result;
         }
 
@@ -81,7 +114,7 @@ namespace JavaNet.Jvm.Converter
         {
             typeName = GetDotNetFullName(typeName);
             int last = typeName.LastIndexOf('.');
-            return typeName.Substring(0, last);
+            return last > 0 ? typeName.Substring(0, last) : typeName;
         }
 
         private static string GetDotNetClassName(string typeName)
@@ -106,18 +139,57 @@ namespace JavaNet.Jvm.Converter
             return typeName;
         }
 
-        private static void ResolveBaseTypes(ModuleDefinition module, Dictionary<TypeDefinition, string> supers)
+        private static TypeReference ResolveBaseType(ModuleDefinition module, JavaClass jc)
         {
-            foreach (KeyValuePair<TypeDefinition, string> pair in supers)
+            string superName = jc.GetSuperName();
+
+            if (superName == jc.GetName())
             {
-                if (pair.Key.FullName == $"{GetDotNetNamespace(pair.Value)}.{GetDotNetClassName(pair.Value)}")
-                {
-                    pair.Key.BaseType = module.TypeSystem.Object;
-                }
-                else if (pair.Value != "java/lang/Object" || !pair.Key.Attributes.HasFlag(TypeAttributes.Interface))
-                {
-                    pair.Key.BaseType = module.GetType(GetDotNetNamespace(pair.Value), GetDotNetClassName(pair.Value));
-                }
+                return module.TypeSystem.Object;
+            }
+
+            if (superName != "java/lang/Object" || !jc.AccessFlags.HasFlag(JavaClassAccessFlags.Interface))
+            {
+                return GetType(module, superName);
+            }
+
+            return null;
+        }
+
+        private static TypeDefinition GetType(ModuleDefinition module, string javaTypeName)
+            => module.GetType(GetDotNetNamespace(javaTypeName), GetDotNetClassName(javaTypeName));
+
+        private static TypeReference GetDescriptorType(ModuleDefinition module, string javaTypeName)
+        {
+            TypeSystem types = module.TypeSystem;
+
+            switch (javaTypeName[0])
+            {
+                case 'V':
+                    return types.Void;
+                case 'B':
+                    return types.Byte;
+                case 'C':
+                    return types.Char;
+                case 'D':
+                    return types.Double;
+                case 'F':
+                    return types.Double;
+                case 'I':
+                    return types.Int32;
+                case 'J':
+                    return types.Int64;
+                case 'L':
+                    return GetType(module, javaTypeName.Substring(1, javaTypeName.Length - 2));
+                case 'S':
+                    return types.Int16;
+                case 'Z':
+                    return types.Boolean;
+                case '[':
+                    // TODO: handle arrays correctly.
+                    return GetDescriptorType(module, javaTypeName.Substring(1));
+                default:
+                    throw new Exception();
             }
         }
     }

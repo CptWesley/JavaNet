@@ -2,6 +2,7 @@
 using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Util;
 using Mono.Cecil;
+using System.Linq;
 
 namespace JavaNet.Jvm.Converter
 {
@@ -62,6 +63,17 @@ namespace JavaNet.Jvm.Converter
         }
 
         /// <summary>
+        /// Gets the names of the interfaces of the given class.
+        /// </summary>
+        /// <param name="jc">The java class.</param>
+        /// <returns>The names of the interfaces of the class.</returns>
+        public static string[] GetInterfaces(this JavaClass jc)
+        {
+            Guard.NotNull(ref jc, nameof(jc));
+            return jc.Interfaces.Select(x => jc.GetConstant<JavaConstantUtf8>(jc.GetConstant<JavaConstantClass>(x).NameIndex).Value).ToArray();
+        }
+
+        /// <summary>
         /// Gets the constant from the constant pool.
         /// </summary>
         /// <typeparam name="T">The type of the constant.</typeparam>
@@ -80,7 +92,7 @@ namespace JavaNet.Jvm.Converter
         /// </summary>
         /// <param name="jc">The java class.</param>
         /// <returns>The type attributes of the class.</returns>
-        public static TypeAttributes GetTypeAttributes(this JavaClass jc)
+        public static TypeAttributes GetAttributes(this JavaClass jc)
         {
             Guard.NotNull(ref jc, nameof(jc));
 
