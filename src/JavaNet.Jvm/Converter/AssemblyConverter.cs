@@ -47,13 +47,12 @@ namespace JavaNet.Jvm.Converter
             using (AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(nameDefinition, Name, ModuleKind.Dll))
             {
                 Dictionary<TypeDefinition, string> supers = new Dictionary<TypeDefinition, string>();
-                Dictionary<string, TypeDefinition> types = new Dictionary<string, TypeDefinition>();
                 foreach (JavaClass jc in classes)
                 {
-                    assembly.MainModule.Types.Add(ConvertClass(jc, supers, types));
+                    assembly.MainModule.Types.Add(ConvertClass(jc, supers));
                 }
 
-                ResolveBaseTypes(assembly.MainModule, supers, types);
+                ResolveBaseTypes(assembly.MainModule, supers);
 
                 return AssemblyDefinitionToBytes(assembly);
             }
@@ -68,16 +67,28 @@ namespace JavaNet.Jvm.Converter
             }
         }
 
-        private static TypeDefinition ConvertClass(JavaClass jc, Dictionary<TypeDefinition, string> supers, Dictionary<string, TypeDefinition> types)
+        private static TypeDefinition ConvertClass(JavaClass jc, Dictionary<TypeDefinition, string> supers)
         {
+            string className = $"{jc.GetPackageName()}{jc.GetName()}";
             string superName = jc.GetSuperName();
-            TypeDefinition result = new TypeDefinition(jc.GetPackageName(), jc.GetName(), jc.GetTypeAttributes());
+            TypeDefinition result = new TypeDefinition(GetDotNetNamespace(className), GetDotNetClassName(className), jc.GetTypeAttributes());
             supers.Add(result, superName);
-            types.Add($"{jc.GetPackageName()}{jc.GetName()}", result);
             return result;
         }
 
-        private static void ResolveBaseTypes(ModuleDefinition module, Dictionary<TypeDefinition, string> supers, Dictionary<string, TypeDefinition> types)
+        private static string GetDotNetNamespace(string typeName)
+        {
+            int last = typeName.LastIndexOf('/');
+            return typeName.Substring(0, last).Replace('/', '.');
+        }
+
+        private static string GetDotNetClassName(string typeName)
+        {
+            int last = typeName.LastIndexOf('/');
+            return typeName.Substring(last + 1);
+        }
+
+        private static void ResolveBaseTypes(ModuleDefinition module, Dictionary<TypeDefinition, string> supers)
         {
             foreach (KeyValuePair<TypeDefinition, string> pair in supers)
             {
@@ -87,8 +98,7 @@ namespace JavaNet.Jvm.Converter
                 }
                 else
                 {
-                    pair.Key.BaseType = module.Types.First(x => x.FullName == pair.Value);
-                    //pair.Key.BaseType = types[pair.Value];
+                    pair.Key.BaseType = module.GetType(GetDotNetNamespace(pair.Value), GetDotNetClassName(pair.Value));
                 }
             }
         }
