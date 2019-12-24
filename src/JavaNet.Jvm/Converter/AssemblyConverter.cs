@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using JavaNet.Jvm.Parser;
@@ -78,28 +79,42 @@ namespace JavaNet.Jvm.Converter
 
         private static string GetDotNetNamespace(string typeName)
         {
-            int last = typeName.LastIndexOf('/');
-            return typeName.Substring(0, last).Replace('/', '.');
+            typeName = GetDotNetFullName(typeName);
+            int last = typeName.LastIndexOf('.');
+            return typeName.Substring(0, last);
         }
 
         private static string GetDotNetClassName(string typeName)
         {
-            int last = typeName.LastIndexOf('/');
+            typeName = GetDotNetFullName(typeName);
+            int last = typeName.LastIndexOf('.');
             return typeName.Substring(last + 1);
+        }
+
+        private static string GetDotNetFullName(string typeName)
+        {
+            typeName = char.ToUpper(typeName[0], CultureInfo.InvariantCulture) + (typeName.Length > 1 ? typeName.Substring(1) : string.Empty);
+
+            for (int i = 0; i < typeName.Length; i++)
+            {
+                if (typeName[i] == '/')
+                {
+                    typeName = typeName.Substring(0, i) + '.' + char.ToUpper(typeName[++i], CultureInfo.InvariantCulture) + typeName.Substring(i + 1, typeName.Length - i - 1);
+                }
+            }
+
+            return typeName;
         }
 
         private static void ResolveBaseTypes(ModuleDefinition module, Dictionary<TypeDefinition, string> supers)
         {
             foreach (KeyValuePair<TypeDefinition, string> pair in supers)
             {
-                if (pair.Value == "java/lang/Object")
+                if (pair.Key.FullName == $"{GetDotNetNamespace(pair.Value)}.{GetDotNetClassName(pair.Value)}")
                 {
-                    if (!pair.Key.Attributes.HasFlag(TypeAttributes.Interface))
-                    {
-                        pair.Key.BaseType = module.TypeSystem.Object;
-                    }
+                    pair.Key.BaseType = module.TypeSystem.Object;
                 }
-                else
+                else if (pair.Value != "java/lang/Object" || !pair.Key.Attributes.HasFlag(TypeAttributes.Interface))
                 {
                     pair.Key.BaseType = module.GetType(GetDotNetNamespace(pair.Value), GetDotNetClassName(pair.Value));
                 }
