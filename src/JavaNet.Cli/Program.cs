@@ -13,7 +13,7 @@ namespace JavaNet.Cli
         public static void Main()
         {
             
-            string dir = "C:/Users/Wesley/Desktop/New folder (3)/";
+            string dir = "C:/Users/Wesley/Desktop/New folder (4)/";
             AssemblyConverter converter = new AssemblyConverter("Rt");
             foreach (string file in Directory.GetFiles(dir))
             {
