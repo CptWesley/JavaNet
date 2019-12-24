@@ -4,6 +4,7 @@ using System.IO;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Constants;
 using Mono.Cecil;
+using System.Linq;
 
 namespace JavaNet.Jvm.Converter
 {
@@ -46,10 +47,13 @@ namespace JavaNet.Jvm.Converter
             AssemblyNameDefinition nameDefinition = new AssemblyNameDefinition(Name, new Version(1, 0, 0, 0));
             using (AssemblyDefinition assembly = AssemblyDefinition.CreateAssembly(nameDefinition, Name, ModuleKind.Dll))
             {
+                Dictionary<TypeDefinition, string> supers = new Dictionary<TypeDefinition, string>();
                 foreach (JavaClass jc in classes)
                 {
-                    assembly.MainModule.Types.Add(ConvertClass(assembly, jc));
+                    assembly.MainModule.Types.Add(ConvertClass(assembly, jc, supers));
                 }
+
+                ResolveBaseTypes(assembly.MainModule, supers);
 
                 return AssemblyDefinitionToBytes(assembly);
             }
@@ -69,22 +73,28 @@ namespace JavaNet.Jvm.Converter
             return javaTypeName.Replace('/', '.');
         }
 
-        private static TypeDefinition ConvertClass(AssemblyDefinition assembly, JavaClass jc)
+        private static TypeDefinition ConvertClass(AssemblyDefinition assembly, JavaClass jc, Dictionary<TypeDefinition, string> supers)
         {
             ModuleDefinition module = assembly.MainModule;
             string superName = jc.GetSuperName();
-            TypeReference baseReference;
-            if (superName == "java/lang/Object")
-            {
-                baseReference = module.TypeSystem.Object;
-            }
-            else
-            {
-                baseReference = module.ImportReference(module.GetType(ToDotNetName(superName)));
-            }
-
-            TypeDefinition result = new TypeDefinition(jc.GetPackageName(), jc.GetName(), jc.GetTypeAttributes(), baseReference);
+            TypeDefinition result = new TypeDefinition(jc.GetPackageName(), jc.GetName(), jc.GetTypeAttributes());
+            supers.Add(result, superName);
             return result;
+        }
+
+        private static void ResolveBaseTypes(ModuleDefinition module, Dictionary<TypeDefinition, string> supers)
+        {
+            foreach (KeyValuePair<TypeDefinition, string> pair in supers)
+            {
+                if (pair.Value == "java/lang/Object")
+                {
+                    pair.Key.BaseType = module.TypeSystem.Object;
+                }
+                else
+                {
+                    pair.Key.BaseType = module.Types.First(x => x.FullName == pair.Value);
+                }
+            }
         }
     }
 }

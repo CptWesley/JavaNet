@@ -96,16 +96,23 @@ namespace JavaNet.Jvm.Tests
         public void Loading()
         {
             AssemblyConverter converter = new AssemblyConverter("HelloWorld");
-            using Stream stream = Resource.Get("HelloWorld.class");
-            JavaClass jc = JavaClass.Create(stream);
-            converter.Include(jc);
+
+            foreach (string file in Resource.GetNames("MultipleTypes"))
+            {
+                using Stream stream = Resource.Get(file);
+                JavaClass jc = JavaClass.Create(stream);
+                converter.Include(jc);
+            }
+
             byte[] bytes = converter.Convert();
             Assembly assembly = Assembly.Load(bytes);
             StringBuilder sb = new StringBuilder();
+            sb.AppendLine();
             foreach (Type t in assembly.GetTypes())
             {
                 sb.AppendLine($"Type: {t.FullName}");
             }
+
             throw new Exception(sb.ToString());
         }
     }
