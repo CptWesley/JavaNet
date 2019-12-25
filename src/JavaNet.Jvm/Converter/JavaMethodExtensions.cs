@@ -213,5 +213,15 @@ namespace JavaNet.Jvm.Converter
 
             return attribute.Parameters.Select(x => jc.GetConstant<JavaConstantUtf8>(x.NameIndex).Value).ToArray();
         }
+
+        /// <summary>
+        /// Gets the code.
+        /// </summary>
+        /// <param name="jm">The java method.</param>
+        /// <returns>The bytes representing the byte code.</returns>
+        public static byte[] GetCode(this JavaMethod jm)
+        {
+            return jm.GetAttribute<JavaAttributeCode>().Code;
+        }
     }
 }

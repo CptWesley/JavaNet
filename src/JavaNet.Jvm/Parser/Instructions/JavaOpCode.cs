@@ -145,7 +145,7 @@ namespace JavaNet.Jvm.Parser.Instructions
         I2l = 0x85,
         I2f = 0x86,
         I2d = 0x87,
-        L2I = 0x88,
+        L2i = 0x88,
         L2f = 0x89,
         L2d = 0x8a,
         F2i = 0x8b,

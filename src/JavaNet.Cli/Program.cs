@@ -17,6 +17,11 @@ namespace JavaNet.Cli
             AssemblyConverter converter = new AssemblyConverter("Rt");
             foreach (string file in Directory.GetFiles(dir))
             {
+                if (Path.GetExtension(file) != ".jar")
+                {
+                    continue;
+                }
+
                 using ZipArchive archive = ZipFile.OpenRead(file);
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
