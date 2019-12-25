@@ -191,35 +191,70 @@ namespace JavaNet.Jvm.Converter
                     case JavaOpCode.FLoad0:
                     case JavaOpCode.DLoad0:
                     case JavaOpCode.ALoad0:
-                        LoadToIl(il, 0, isStatic, parameters, wides);
+                        Load(il, 0, isStatic, parameters, wides);
                         break;
                     case JavaOpCode.ILoad1:
                     case JavaOpCode.LLoad1:
                     case JavaOpCode.FLoad1:
                     case JavaOpCode.DLoad1:
                     case JavaOpCode.ALoad1:
-                        LoadToIl(il, 1, isStatic, parameters, wides);
+                        Load(il, 1, isStatic, parameters, wides);
                         break;
                     case JavaOpCode.ILoad2:
                     case JavaOpCode.LLoad2:
                     case JavaOpCode.FLoad2:
                     case JavaOpCode.DLoad2:
                     case JavaOpCode.ALoad2:
-                        LoadToIl(il, 2, isStatic, parameters, wides);
+                        Load(il, 2, isStatic, parameters, wides);
                         break;
                     case JavaOpCode.ILoad3:
                     case JavaOpCode.LLoad3:
                     case JavaOpCode.FLoad3:
                     case JavaOpCode.DLoad3:
                     case JavaOpCode.ALoad3:
-                        LoadToIl(il, 3, isStatic, parameters, wides);
+                        Load(il, 3, isStatic, parameters, wides);
                         break;
                     case JavaOpCode.ILoad:
                     case JavaOpCode.LLoad:
                     case JavaOpCode.FLoad:
                     case JavaOpCode.DLoad:
                     case JavaOpCode.ALoad:
-                        LoadToIl(il, code[++i], isStatic, parameters, wides);
+                        Load(il, code[++i], isStatic, parameters, wides);
+                        break;
+                    case JavaOpCode.IStore0:
+                    case JavaOpCode.LStore0:
+                    case JavaOpCode.FStore0:
+                    case JavaOpCode.DStore0:
+                    case JavaOpCode.AStore0:
+                        Store(il, 0, isStatic, parameters, wides);
+                        break;
+                    case JavaOpCode.IStore1:
+                    case JavaOpCode.LStore1:
+                    case JavaOpCode.FStore1:
+                    case JavaOpCode.DStore1:
+                    case JavaOpCode.AStore1:
+                        Store(il, 1, isStatic, parameters, wides);
+                        break;
+                    case JavaOpCode.IStore2:
+                    case JavaOpCode.LStore2:
+                    case JavaOpCode.FStore2:
+                    case JavaOpCode.DStore2:
+                    case JavaOpCode.AStore2:
+                        Store(il, 2, isStatic, parameters, wides);
+                        break;
+                    case JavaOpCode.IStore3:
+                    case JavaOpCode.LStore3:
+                    case JavaOpCode.FStore3:
+                    case JavaOpCode.DStore3:
+                    case JavaOpCode.AStore3:
+                        Store(il, 3, isStatic, parameters, wides);
+                        break;
+                    case JavaOpCode.IStore:
+                    case JavaOpCode.LStore:
+                    case JavaOpCode.FStore:
+                    case JavaOpCode.DStore:
+                    case JavaOpCode.AStore:
+                        Store(il, code[++i], isStatic, parameters, wides);
                         break;
                     case JavaOpCode.AConstNull:
                         il.Emit(OpCodes.Ldnull);
@@ -293,8 +328,8 @@ namespace JavaNet.Jvm.Converter
                     case JavaOpCode.Dup:
                         il.Emit(OpCodes.Dup);
                         break;
-                    //default:
-                    //    throw new Exception($"Unknown opcode '{op}'.");
+                    default:
+                        throw new Exception($"Unknown opcode '{op}'.");
                 }
             }
         }
@@ -332,7 +367,7 @@ namespace JavaNet.Jvm.Converter
             }
         }
 
-        private static void LoadToIl(ILProcessor il, int index, bool isStatic, int parameters, List<int> wides)
+        private static void Load(ILProcessor il, int index, bool isStatic, int parameters, List<int> wides)
         {
             // 64 bit parameters take up two slots.
             index -= wides.Count(x => x < index);
@@ -382,6 +417,44 @@ namespace JavaNet.Jvm.Converter
                         return;
                     default:
                         il.Emit(OpCodes.Ldloc, (ushort)index);
+                        return;
+                }
+            }
+        }
+
+        private static void Store(ILProcessor il, int index, bool isStatic, int parameters, List<int> wides)
+        {
+            // 64 bit parameters take up two slots.
+            index -= wides.Count(x => x < index);
+
+            if (!isStatic)
+            {
+                parameters++;
+            }
+
+            if (index < parameters)
+            {
+                il.Emit(OpCodes.Starg, (ushort)index);
+            }
+            else
+            {
+                index -= parameters;
+                switch (index)
+                {
+                    case 0:
+                        il.Emit(OpCodes.Stloc_0);
+                        return;
+                    case 1:
+                        il.Emit(OpCodes.Stloc_1);
+                        return;
+                    case 2:
+                        il.Emit(OpCodes.Stloc_2);
+                        return;
+                    case 3:
+                        il.Emit(OpCodes.Stloc_3);
+                        return;
+                    default:
+                        il.Emit(OpCodes.Stloc, (ushort)index);
                         return;
                 }
             }
