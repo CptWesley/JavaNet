@@ -103,8 +103,7 @@ namespace JavaNet.Jvm.Converter
             Guard.NotNull(ref jm, nameof(jm));
 
             string descriptor = jm.GetDescriptor(jc);
-
-            return descriptor.Substring(descriptor.IndexOf(')') + 1);
+            return DescriptorHelper.GetReturn(descriptor);
         }
 
         /// <summary>
@@ -112,47 +111,14 @@ namespace JavaNet.Jvm.Converter
         /// </summary>
         /// <param name="jm">The java method.</param>
         /// <param name="jc">The java class.</param>
-        /// <returns>The return type of the java method.</returns>
+        /// <returns>The parameter types of the java method.</returns>
         public static string[] GetParameterTypes(this JavaMethod jm, JavaClass jc)
         {
             Guard.NotNull(ref jc, nameof(jc));
             Guard.NotNull(ref jm, nameof(jm));
 
             string descriptor = jm.GetDescriptor(jc);
-            string parameters = descriptor.Substring(descriptor.IndexOf('(') + 1, descriptor.IndexOf(')') - descriptor.IndexOf('(') - 1);
-            List<string> result = new List<string>();
-            int i = 0;
-            string memory = string.Empty;
-            while (i < parameters.Length)
-            {
-                if (parameters[i] == 'B' ||
-                    parameters[i] == 'C' ||
-                    parameters[i] == 'D' ||
-                    parameters[i] == 'F' ||
-                    parameters[i] == 'I' ||
-                    parameters[i] == 'J' ||
-                    parameters[i] == 'S' ||
-                    parameters[i] == 'Z')
-                {
-                    memory += parameters[i++];
-                    result.Add(memory);
-                    memory = string.Empty;
-                }
-                else if (parameters[i] == '[')
-                {
-                    memory += parameters[i++];
-                }
-                else if (parameters[i] == 'L')
-                {
-                    int length = parameters.Substring(i).IndexOf(';') + 1;
-                    memory += parameters.Substring(i, length);
-                    result.Add(memory);
-                    memory = string.Empty;
-                    i += length;
-                }
-            }
-
-            return result.ToArray();
+            return DescriptorHelper.GetParameters(descriptor);
         }
 
         /// <summary>

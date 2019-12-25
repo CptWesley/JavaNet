@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Util;
 using Mono.Cecil;
@@ -16,7 +18,7 @@ namespace JavaNet.Jvm.Converter
         /// <param name="module">The module.</param>
         /// <param name="javaTypeName">Name of the java type.</param>
         /// <returns>The type reference.</returns>
-        public static TypeReference GetJavaType(this ModuleDefinition module, string javaTypeName)
+        public static TypeDefinition GetJavaType(this ModuleDefinition module, string javaTypeName)
         {
             Guard.NotNull(ref module, nameof(module));
             Guard.NotNull(ref javaTypeName, nameof(javaTypeName));
@@ -90,6 +92,35 @@ namespace JavaNet.Jvm.Converter
                 default:
                     throw new Exception();
             }
+        }
+
+        /// <summary>
+        /// Gets the return type of a method.
+        /// </summary>
+        /// <param name="module">The module.</param>
+        /// <param name="descriptor">The java type descriptor.</param>
+        /// <returns>The return type of the java descriptor.</returns>
+        public static TypeReference GetReturnType(this ModuleDefinition module, string descriptor)
+        {
+            Guard.NotNull(ref module, nameof(module));
+            Guard.NotNull(ref descriptor, nameof(descriptor));
+
+            return module.GetDescriptorType(DescriptorHelper.GetReturn(descriptor));
+        }
+
+        /// <summary>
+        /// Gets the parameter types of a method.
+        /// </summary>
+        /// <param name="module">The module.</param>
+        /// <param name="descriptor">The java type descriptor.</param>
+        /// <returns>The parameter types of the java descriptor.</returns>
+        public static TypeReference[] GetParameterTypes(this ModuleDefinition module, string descriptor)
+        {
+            Guard.NotNull(ref module, nameof(module));
+            Guard.NotNull(ref descriptor, nameof(descriptor));
+
+            string[] parameters = DescriptorHelper.GetParameters(descriptor);
+            return parameters.Select(x => module.GetDescriptorType(x)).ToArray();
         }
     }
 }
