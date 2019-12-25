@@ -63,7 +63,7 @@ namespace JavaNet.Jvm.Converter
                     definition.BaseType = module.ResolveBaseType(jc);
                     foreach (string interfac in jc.GetInterfaces())
                     {
-                        definition.Interfaces.Add(new InterfaceImplementation(module.GetType(interfac)));
+                        definition.Interfaces.Add(new InterfaceImplementation(module.GetJavaType(interfac)));
                     }
 
                     foreach (JavaMethod jm in jc.Methods)
