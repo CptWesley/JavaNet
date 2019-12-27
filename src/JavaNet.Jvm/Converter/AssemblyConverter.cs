@@ -50,6 +50,7 @@ namespace JavaNet.Jvm.Converter
             {
                 ModuleDefinition module = assembly.MainModule;
                 Dictionary<JavaClass, TypeDefinition> definitions = new Dictionary<JavaClass, TypeDefinition>();
+                Dictionary<JavaMethod, MethodDefinition> methods = new Dictionary<JavaMethod, MethodDefinition>();
                 foreach (JavaClass jc in classes)
                 {
                     TypeDefinition definition = ConvertClass(jc);
@@ -66,14 +67,24 @@ namespace JavaNet.Jvm.Converter
                         definition.Interfaces.Add(new InterfaceImplementation(module.GetJavaType(interfac)));
                     }
 
-                    foreach (JavaMethod jm in jc.Methods)
-                    {
-                        definition.Methods.Add(ConvertMethod(assembly, jc, jm));
-                    }
-
                     foreach (JavaField jf in jc.Fields)
                     {
                         definition.Fields.Add(ConvertField(assembly, jc, jf));
+                    }
+
+                    foreach (JavaMethod jm in jc.Methods)
+                    {
+                        MethodDefinition method = DeclareMethod(assembly, jc, jm);
+                        methods.Add(jm, method);
+                        definition.Methods.Add(method);
+                    }
+                }
+
+                foreach (JavaClass jc in classes)
+                {
+                    foreach (JavaMethod jm in jc.Methods)
+                    {
+                        EmitMethod(methods[jm], jc, jm);
                     }
                 }
 
@@ -107,27 +118,24 @@ namespace JavaNet.Jvm.Converter
             return result;
         }
 
-        private static MethodDefinition ConvertMethod(AssemblyDefinition assembly, JavaClass jc, JavaMethod jm)
+        private static MethodDefinition DeclareMethod(AssemblyDefinition assembly, JavaClass jc, JavaMethod jm)
         {
             string name = IdentifierHelper.GetDotNetFullName(jm.GetName(jc));
             MethodAttributes attributes = jm.GetAttributes();
             ModuleDefinition module = assembly.MainModule;
+            string returnTypeName = jm.GetReturnType(jc);
+            TypeReference returnType = module.GetDescriptorType(returnTypeName);
 
-            if (name == "<init>" || name == "<clinit>")
+            if (name == ".ctor" || name == ".cctor")
             {
-                if (name == "<init>")
-                {
-                    name = ".ctor";
-                }
-                else if (name == "<clinit>")
-                {
-                    name = ".cctor";
-                }
-
                 attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
             }
 
-            TypeReference returnType = module.GetDescriptorType(jm.GetReturnType(jc));
+            //if (jc.AccessFlags.HasFlag(JavaClassAccessFlags.Interface))
+            //{
+            //    attributes |= MethodAttributes.NewSlot;
+            //}
+
             MethodDefinition result = new MethodDefinition(name, attributes, returnType);
 
             string[] parameterTypes = jm.GetParameterTypes(jc);
@@ -138,17 +146,19 @@ namespace JavaNet.Jvm.Converter
                 result.Parameters.Add(new ParameterDefinition(parameterNames[i], ParameterAttributes.None, module.GetDescriptorType(parameterTypes[i])));
             }
 
-            ILProcessor il = result.Body?.GetILProcessor();
+            return result;
+        }
+
+        private static void EmitMethod(MethodDefinition method, JavaClass jc, JavaMethod jm)
+        {
+            ModuleDefinition module = method.Module;
+            string[] parameterTypes = jm.GetParameterTypes(jc);
+
+            ILProcessor il = method.Body?.GetILProcessor();
             if (il != null)
             {
-                //try
-                {
-                    new IlEmitter(il, module).Emit(jc, jm.GetCode(), result.IsStatic, parameterTypes);
-                }
-                //catch { }
+                new IlEmitter(il, module).EmitMethod(jc, jm.GetCode(), method.IsStatic, parameterTypes);
             }
-
-            return result;
         }
     }
 }

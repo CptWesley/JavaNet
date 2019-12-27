@@ -52,6 +52,15 @@ namespace JavaNet.Jvm.Converter
                 }
             }
 
+            if (typeName == "<init>")
+            {
+                typeName = ".ctor";
+            }
+            else if (typeName == "<clinit>")
+            {
+                typeName = ".cctor";
+            }
+
             return typeName;
         }
     }
