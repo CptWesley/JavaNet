@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Constants;
@@ -155,7 +154,8 @@ namespace JavaNet.Jvm.Converter
             Guard.NotNull(ref type, nameof(type));
             Guard.NotNull(ref methodName, nameof(methodName));
 
-            return module.ImportReference(type).Resolve().Methods.First(x => x.Name == methodName);
+            MethodReference method = module.ImportReference(type).Resolve().Methods.First(x => x.Name == methodName);
+            return module.ImportReference(method);
         }
     }
 }
