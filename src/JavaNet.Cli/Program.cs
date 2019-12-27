@@ -17,23 +17,22 @@ namespace JavaNet.Cli
             AssemblyConverter converter = new AssemblyConverter("Rt");
             foreach (string file in Directory.GetFiles(dir))
             {
-                if (Path.GetExtension(file) != ".jar")
+                if (Path.GetExtension(file) == ".jar")
                 {
-                    continue;
-                }
-
-                using ZipArchive archive = ZipFile.OpenRead(file);
-                foreach (ZipArchiveEntry entry in archive.Entries)
-                {
-                    if (Path.GetExtension(entry.Name) != ".class")
+                    using ZipArchive archive = ZipFile.OpenRead(file);
+                    foreach (ZipArchiveEntry entry in archive.Entries)
                     {
-                        continue;
+                        if (Path.GetExtension(entry.Name) == ".class")
+                        {
+                            using Stream stream = entry.Open();
+                            AddFile(converter, stream);
+                        }
                     }
-                    Console.WriteLine($"Started parsing '{entry.FullName}'");
-                    using Stream stream = entry.Open();
-                    JavaClass jc = JavaClass.Create(stream);
-                    Console.WriteLine($"Finished parsing '{jc.GetName()}'");
-                    converter.Include(jc);
+                }
+                else if (Path.GetExtension(file) == ".class")
+                {
+                    using Stream stream = File.OpenRead(file);
+                    AddFile(converter, stream);
                 }
             }
 
@@ -43,6 +42,13 @@ namespace JavaNet.Cli
             {
                 Console.WriteLine($"Type: {type.FullName}");
             }
+        }
+
+        private static void AddFile(AssemblyConverter converter, Stream stream)
+        {
+            JavaClass jc = JavaClass.Create(stream);
+            Console.WriteLine($"Finished parsing '{jc.GetName()}'");
+            converter.Include(jc);
         }
 
         private static TypeReference DuplicateDefinition(AssemblyDefinition assembly, TypeDefinition type, TypeReference baseType)
