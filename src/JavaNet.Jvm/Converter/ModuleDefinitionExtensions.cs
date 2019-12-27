@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using JavaNet.Jvm.Parser;
+using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Util;
 using Mono.Cecil;
 
@@ -121,6 +122,40 @@ namespace JavaNet.Jvm.Converter
 
             string[] parameters = DescriptorHelper.GetParameters(descriptor);
             return parameters.Select(x => module.GetDescriptorType(x)).ToArray();
+        }
+
+        /// <summary>
+        /// Gets the type reference from a module from a java class and constant pool index.
+        /// </summary>
+        /// <param name="module">The module.</param>
+        /// <param name="jc">The java class.</param>
+        /// <param name="classIndex">Index of the class.</param>
+        /// <returns>The type reference.</returns>
+        public static TypeDefinition GetJavaType(this ModuleDefinition module, JavaClass jc, ushort classIndex)
+        {
+            Guard.NotNull(ref module, nameof(module));
+            Guard.NotNull(ref jc, nameof(jc));
+            Guard.NotNull(ref classIndex, nameof(classIndex));
+
+            JavaConstantClass constant = jc.GetConstant<JavaConstantClass>(classIndex);
+            string name = jc.GetConstant<JavaConstantUtf8>(constant.NameIndex).Value;
+            return module.GetJavaType(name);
+        }
+
+        /// <summary>
+        /// Gets a method reference from a given type with the given name.
+        /// </summary>
+        /// <param name="module">The module.</param>
+        /// <param name="type">The type of object to get the method from.</param>
+        /// <param name="methodName">Name of the method.</param>
+        /// <returns>The method.</returns>
+        public static MethodReference GetMethod(this ModuleDefinition module, Type type, string methodName)
+        {
+            Guard.NotNull(ref module, nameof(module));
+            Guard.NotNull(ref type, nameof(type));
+            Guard.NotNull(ref methodName, nameof(methodName));
+
+            return module.ImportReference(type).Resolve().Methods.First(x => x.Name == methodName);
         }
     }
 }
