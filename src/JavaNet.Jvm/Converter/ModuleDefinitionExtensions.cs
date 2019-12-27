@@ -90,7 +90,7 @@ namespace JavaNet.Jvm.Converter
                 case '[':
                     return new ArrayType(GetDescriptorType(module, descriptor.Substring(1)));
                 default:
-                    throw new Exception();
+                    throw new ArgumentException($"Illegal first character found '{descriptor[0]}'.");
             }
         }
 
