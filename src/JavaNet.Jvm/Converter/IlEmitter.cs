@@ -255,6 +255,8 @@ namespace JavaNet.Jvm.Converter
                         break;
                     case JavaOpCode.INeg:
                     case JavaOpCode.LNeg:
+                    case JavaOpCode.FNeg:
+                    case JavaOpCode.DNeg:
                         Emit(address, OpCodes.Neg);
                         break;
                     case JavaOpCode.I2b:
