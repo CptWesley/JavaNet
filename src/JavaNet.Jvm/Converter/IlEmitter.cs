@@ -5,7 +5,6 @@ using System.Runtime.Serialization;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Parser.Instructions;
-using JavaNet.Jvm.Parser.Methods;
 using JavaNet.Jvm.Util;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -272,7 +271,6 @@ namespace JavaNet.Jvm.Converter
                         break;
                     default:
                         throw new Exception($"Unknown opcode '{op}'.");
-                        return;
                 }
 
                 address++;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Fields;
 using JavaNet.Jvm.Parser.Methods;
@@ -132,11 +131,6 @@ namespace JavaNet.Jvm.Converter
                 attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
                 attributes &= ~MethodAttributes.Virtual;
             }
-
-            //if (jc.AccessFlags.HasFlag(JavaClassAccessFlags.Interface))
-            //{
-            //    attributes |= MethodAttributes.NewSlot;
-            //}
 
             MethodDefinition result = new MethodDefinition(name, attributes, returnType);
 
