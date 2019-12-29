@@ -134,7 +134,7 @@ namespace JavaNet.Jvm.Parser.Instructions
         IShR = 0x7a,
         LShR = 0x7b,
         IuShR = 0x7c,
-        LuShL = 0x7d,
+        LuShR = 0x7d,
         IAnd = 0x7e,
         LAnd = 0x7f,
         IOr = 0x80,

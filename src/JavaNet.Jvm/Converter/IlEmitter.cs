@@ -17,10 +17,12 @@ namespace JavaNet.Jvm.Converter
     /// </summary>
     public class IlEmitter
     {
+        public static readonly HashSet<JavaOpCode> missing = new HashSet<JavaOpCode>();
         private readonly ILProcessor il;
         private readonly ModuleDefinition module;
         private readonly Dictionary<int, Instruction> first = new Dictionary<int, Instruction>();
         private readonly List<(Instruction Instruction, OpCode OpCode, int TargetAddress)> jumps = new List<(Instruction, OpCode, int)>();
+        private readonly Dictionary<int, VariableDefinition> locals = new Dictionary<int, VariableDefinition>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IlEmitter"/> class.
@@ -48,11 +50,12 @@ namespace JavaNet.Jvm.Converter
 
             for (int i = 0; i < code.Length; i++)
             {
+                int address = i;
                 JavaOpCode op = (JavaOpCode)code[i];
                 switch (op)
                 {
                     case JavaOpCode.Nop:
-                        Emit(i, OpCodes.Nop);
+                        Emit(address, OpCodes.Nop);
                         break;
                     case JavaOpCode.IReturn:
                     case JavaOpCode.LReturn:
@@ -60,282 +63,395 @@ namespace JavaNet.Jvm.Converter
                     case JavaOpCode.DReturn:
                     case JavaOpCode.AReturn:
                     case JavaOpCode.Return:
-                        Emit(i, OpCodes.Ret);
+                        Emit(address, OpCodes.Ret);
                         break;
                     case JavaOpCode.ILoad0:
                     case JavaOpCode.LLoad0:
                     case JavaOpCode.FLoad0:
                     case JavaOpCode.DLoad0:
                     case JavaOpCode.ALoad0:
-                        Load(i, 0, isStatic, parametersTypes);
+                        Load(address, 0, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.ILoad1:
                     case JavaOpCode.LLoad1:
                     case JavaOpCode.FLoad1:
                     case JavaOpCode.DLoad1:
                     case JavaOpCode.ALoad1:
-                        Load(i, 1, isStatic, parametersTypes);
+                        Load(address, 1, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.ILoad2:
                     case JavaOpCode.LLoad2:
                     case JavaOpCode.FLoad2:
                     case JavaOpCode.DLoad2:
                     case JavaOpCode.ALoad2:
-                        Load(i, 2, isStatic, parametersTypes);
+                        Load(address, 2, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.ILoad3:
                     case JavaOpCode.LLoad3:
                     case JavaOpCode.FLoad3:
                     case JavaOpCode.DLoad3:
                     case JavaOpCode.ALoad3:
-                        Load(i, 3, isStatic, parametersTypes);
+                        Load(address, 3, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.ILoad:
                     case JavaOpCode.LLoad:
                     case JavaOpCode.FLoad:
                     case JavaOpCode.DLoad:
                     case JavaOpCode.ALoad:
-                        Load(i, code[++i], isStatic, parametersTypes);
+                        Load(address, code[++i], isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.IStore0:
                     case JavaOpCode.LStore0:
                     case JavaOpCode.FStore0:
                     case JavaOpCode.DStore0:
                     case JavaOpCode.AStore0:
-                        Store(i, 0, isStatic, parametersTypes);
+                        Store(address, 0, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.IStore1:
                     case JavaOpCode.LStore1:
                     case JavaOpCode.FStore1:
                     case JavaOpCode.DStore1:
                     case JavaOpCode.AStore1:
-                        Store(i, 1, isStatic, parametersTypes);
+                        Store(address, 1, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.IStore2:
                     case JavaOpCode.LStore2:
                     case JavaOpCode.FStore2:
                     case JavaOpCode.DStore2:
                     case JavaOpCode.AStore2:
-                        Store(i, 2, isStatic, parametersTypes);
+                        Store(address, 2, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.IStore3:
                     case JavaOpCode.LStore3:
                     case JavaOpCode.FStore3:
                     case JavaOpCode.DStore3:
                     case JavaOpCode.AStore3:
-                        Store(i, 3, isStatic, parametersTypes);
+                        Store(address, 3, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.IStore:
                     case JavaOpCode.LStore:
                     case JavaOpCode.FStore:
                     case JavaOpCode.DStore:
                     case JavaOpCode.AStore:
-                        Store(i, code[++i], isStatic, parametersTypes);
+                        Store(address, code[++i], isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.IConstM1:
-                        Emit(i, OpCodes.Ldc_I4_M1);
+                        Emit(address, OpCodes.Ldc_I4_M1);
                         break;
                     case JavaOpCode.IConst0:
-                        Emit(i, OpCodes.Ldc_I4_0);
+                        Emit(address, OpCodes.Ldc_I4_0);
                         break;
                     case JavaOpCode.IConst1:
-                        Emit(i, OpCodes.Ldc_I4_1);
+                        Emit(address, OpCodes.Ldc_I4_1);
                         break;
                     case JavaOpCode.IConst2:
-                        Emit(i, OpCodes.Ldc_I4_2);
+                        Emit(address, OpCodes.Ldc_I4_2);
                         break;
                     case JavaOpCode.IConst3:
-                        Emit(i, OpCodes.Ldc_I4_3);
+                        Emit(address, OpCodes.Ldc_I4_3);
                         break;
                     case JavaOpCode.IConst4:
-                        Emit(i, OpCodes.Ldc_I4_4);
+                        Emit(address, OpCodes.Ldc_I4_4);
                         break;
                     case JavaOpCode.IConst5:
-                        Emit(i, OpCodes.Ldc_I4_5);
+                        Emit(address, OpCodes.Ldc_I4_5);
                         break;
                     case JavaOpCode.LConst0:
-                        Emit(i, OpCodes.Ldc_I8, 0L);
+                        Emit(address, OpCodes.Ldc_I8, 0L);
                         break;
                     case JavaOpCode.LConst1:
-                        Emit(i, OpCodes.Ldc_I8, 1L);
+                        Emit(address, OpCodes.Ldc_I8, 1L);
                         break;
                     case JavaOpCode.FConst0:
-                        Emit(i, OpCodes.Ldc_R4, 0f);
+                        Emit(address, OpCodes.Ldc_R4, 0f);
                         break;
                     case JavaOpCode.FConst1:
-                        Emit(i, OpCodes.Ldc_R4, 1f);
+                        Emit(address, OpCodes.Ldc_R4, 1f);
                         break;
                     case JavaOpCode.FConst2:
-                        Emit(i, OpCodes.Ldc_R4, 2f);
+                        Emit(address, OpCodes.Ldc_R4, 2f);
                         break;
                     case JavaOpCode.DConst0:
-                        Emit(i, OpCodes.Ldc_R8, 0d);
+                        Emit(address, OpCodes.Ldc_R8, 0d);
                         break;
                     case JavaOpCode.DConst1:
-                        Emit(i, OpCodes.Ldc_R8, 1d);
+                        Emit(address, OpCodes.Ldc_R8, 1d);
                         break;
                     case JavaOpCode.AConstNull:
-                        Emit(i, OpCodes.Ldnull);
+                        Emit(address, OpCodes.Ldnull);
                         break;
                     case JavaOpCode.BiPush:
-                        Emit(i, OpCodes.Ldc_I4, (int)code[++i]);
+                        Emit(address, OpCodes.Ldc_I4, (int)code[++i]);
+                        break;
+                    case JavaOpCode.SiPush:
+                        Emit(address, OpCodes.Ldc_I4, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.Ldc:
-                        Ldc(i, jc, code[++i]);
+                        Ldc(address, jc, code[++i]);
                         break;
                     case JavaOpCode.LdcW:
                     case JavaOpCode.Ldc2W:
-                        Ldc(i, jc, Combine(code[++i], code[++i]));
+                        Ldc(address, jc, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IInc:
+                        int incrementIndex = code[++i];
+                        Load(address, incrementIndex, isStatic, parametersTypes, op);
+                        Emit(address, OpCodes.Ldc_I4, code[++i]);
+                        Emit(address, OpCodes.Add);
+                        Store(address, incrementIndex, isStatic, parametersTypes, op);
                         break;
                     case JavaOpCode.IAdd:
                     case JavaOpCode.LAdd:
                     case JavaOpCode.FAdd:
                     case JavaOpCode.DAdd:
-                        Emit(i, OpCodes.Add);
+                        Emit(address, OpCodes.Add);
                         break;
                     case JavaOpCode.ISub:
                     case JavaOpCode.LSub:
                     case JavaOpCode.FSub:
                     case JavaOpCode.DSub:
-                        Emit(i, OpCodes.Sub);
+                        Emit(address, OpCodes.Sub);
                         break;
                     case JavaOpCode.IMul:
                     case JavaOpCode.LMul:
                     case JavaOpCode.FMul:
                     case JavaOpCode.DMul:
-                        Emit(i, OpCodes.Mul);
+                        Emit(address, OpCodes.Mul);
                         break;
                     case JavaOpCode.IDiv:
                     case JavaOpCode.LDiv:
                     case JavaOpCode.FDiv:
                     case JavaOpCode.DDiv:
-                        Emit(i, OpCodes.Div);
+                        Emit(address, OpCodes.Div);
                         break;
                     case JavaOpCode.IRem:
                     case JavaOpCode.LRem:
                     case JavaOpCode.FRem:
                     case JavaOpCode.DRem:
-                        Emit(i, OpCodes.Rem);
+                        Emit(address, OpCodes.Rem);
+                        break;
+                    case JavaOpCode.IShL:
+                    case JavaOpCode.LShL:
+                        Emit(address, OpCodes.Shl);
+                        break;
+                    case JavaOpCode.IShR:
+                    case JavaOpCode.LShR:
+                        Emit(address, OpCodes.Shr);
+                        break;
+                    case JavaOpCode.IuShR:
+                    case JavaOpCode.LuShR:
+                        Emit(address, OpCodes.Shr_Un);
+                        break;
+                    case JavaOpCode.IXor:
+                    case JavaOpCode.LXor:
+                        Emit(address, OpCodes.Xor);
+                        break;
+                    case JavaOpCode.IOr:
+                    case JavaOpCode.LOr:
+                        Emit(address, OpCodes.Or);
+                        break;
+                    case JavaOpCode.IAnd:
+                    case JavaOpCode.LAnd:
+                        Emit(address, OpCodes.And);
+                        break;
+                    case JavaOpCode.INeg:
+                    case JavaOpCode.LNeg:
+                        Emit(address, OpCodes.Neg);
                         break;
                     case JavaOpCode.I2b:
-                        Emit(i, OpCodes.Conv_U1);
+                        Emit(address, OpCodes.Conv_U1);
+                        break;
+                    case JavaOpCode.I2c:
+                        Emit(address, OpCodes.Conv_U2);
                         break;
                     case JavaOpCode.I2s:
-                        Emit(i, OpCodes.Conv_I2);
+                        Emit(address, OpCodes.Conv_I2);
                         break;
                     case JavaOpCode.L2i:
                     case JavaOpCode.F2i:
                     case JavaOpCode.D2i:
-                        Emit(i, OpCodes.Conv_I4);
+                        Emit(address, OpCodes.Conv_I4);
                         break;
                     case JavaOpCode.I2l:
                     case JavaOpCode.F2l:
                     case JavaOpCode.D2l:
-                        Emit(i, OpCodes.Conv_I8);
+                        Emit(address, OpCodes.Conv_I8);
                         break;
                     case JavaOpCode.I2f:
                     case JavaOpCode.L2f:
                     case JavaOpCode.D2f:
-                        Emit(i, OpCodes.Conv_R4);
+                        Emit(address, OpCodes.Conv_R4);
                         break;
                     case JavaOpCode.I2d:
                     case JavaOpCode.L2d:
                     case JavaOpCode.F2d:
-                        Emit(i, OpCodes.Conv_R8);
+                        Emit(address, OpCodes.Conv_R8);
                         break;
                     case JavaOpCode.Dup:
-                        Emit(i, OpCodes.Dup);
+                        Emit(address, OpCodes.Dup);
                         break;
                     case JavaOpCode.InvokeVirtual:
                     case JavaOpCode.InvokeSpecial:
-                        Call(i, jc, Combine(code[++i], code[++i]), false);
+                        Call(address, jc, Combine(code[++i], code[++i]), false);
                         break;
                     case JavaOpCode.InvokeInterface:
-                        Call(i, jc, Combine(code[++i], code[++i]), false);
+                        Call(address, jc, Combine(code[++i], code[++i]), false);
                         i += 2;
                         break;
                     case JavaOpCode.InvokeDynamic:
-                        InvokeDynamic(i, jc, Combine(code[++i], code[++i]));
+                        InvokeDynamic(address, jc, Combine(code[++i], code[++i]));
                         i += 2;
                         break;
                     case JavaOpCode.InvokeStatic:
-                        Call(i, jc, Combine(code[++i], code[++i]), true);
+                        Call(address, jc, Combine(code[++i], code[++i]), true);
                         break;
                     case JavaOpCode.Goto:
-                        EmitJump(i, OpCodes.Br, Combine(code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Br, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.GotoW:
-                        EmitJump(i, OpCodes.Br, Combine(code[++i], code[++i], code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Br, (short)Combine(code[++i], code[++i], code[++i], code[++i]));
                         break;
                     case JavaOpCode.New:
-                        Emit(i, OpCodes.Ldtoken, module.GetJavaType(jc, Combine(code[++i], code[++i])));
-                        Emit(i, OpCodes.Call, module.GetMethod(typeof(Type), "GetTypeFromHandle"));
-                        Emit(i, OpCodes.Call, module.GetMethod(typeof(FormatterServices), "GetUninitializedObject"));
+                        Emit(address, OpCodes.Ldtoken, module.GetJavaType(jc, Combine(code[++i], code[++i])));
+                        Emit(address, OpCodes.Call, module.GetMethod(typeof(Type), "GetTypeFromHandle"));
+                        Emit(address, OpCodes.Call, module.GetMethod(typeof(FormatterServices), "GetUninitializedObject"));
                         break;
                     case JavaOpCode.Pop:
-                        Emit(i, il.Create(OpCodes.Pop));
+                        Emit(address, OpCodes.Pop);
                         break;
                     case JavaOpCode.Pop2:
-                        Emit(i, OpCodes.Pop);
-                        Emit(i, OpCodes.Pop);
+                        Emit(address, OpCodes.Pop);
+                        Emit(address, OpCodes.Pop);
                         break;
                     case JavaOpCode.AThrow:
-                        Emit(i, OpCodes.Throw);
+                        Emit(address, OpCodes.Throw);
                         break;
                     case JavaOpCode.IfICmpEq:
                     case JavaOpCode.IfACmpEq:
-                        EmitJump(i, OpCodes.Beq, Combine(code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Beq, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IfICmpNe:
                     case JavaOpCode.IfACmpNe:
-                        EmitJump(i, OpCodes.Bne_Un, Combine(code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Bne_Un, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IfICmpLt:
-                        EmitJump(i, OpCodes.Blt, Combine(code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Blt, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IfICmpLe:
-                        EmitJump(i, OpCodes.Ble, Combine(code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Ble, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IfICmpGt:
-                        EmitJump(i, OpCodes.Bgt, Combine(code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Bgt, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IfICmpGe:
-                        EmitJump(i, OpCodes.Bge, Combine(code[++i], code[++i]));
+                        EmitJump(address, OpCodes.Bge, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IfNull:
-                        EmitJump(i, OpCodes.Brfalse, Combine(code[++i], code[++i]));
+                    case JavaOpCode.IfEq:
+                        EmitJump(address, OpCodes.Brfalse, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IfNonNull:
-                        EmitJump(i, OpCodes.Brtrue, Combine(code[++i], code[++i]));
+                    case JavaOpCode.IfNe:
+                        EmitJump(address, OpCodes.Brtrue, (short)Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfLt:
+                        Emit(address, OpCodes.Ldc_I4_0);
+                        EmitJump(address, OpCodes.Blt, (short)Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfLe:
+                        Emit(address, OpCodes.Ldc_I4_0);
+                        EmitJump(address, OpCodes.Ble, (short)Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfGt:
+                        Emit(address, OpCodes.Ldc_I4_0);
+                        EmitJump(address, OpCodes.Bgt, (short)Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfGe:
+                        Emit(address, OpCodes.Ldc_I4_0);
+                        EmitJump(address, OpCodes.Bge, (short)Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.ArrayLength:
-                        Emit(i, OpCodes.Ldlen);
+                        Emit(address, OpCodes.Ldlen);
                         break;
                     case JavaOpCode.GetField:
-                        GetField(i, jc, Combine(code[++i], code[++i]), false);
+                        GetField(address, jc, Combine(code[++i], code[++i]), false);
                         break;
                     case JavaOpCode.GetStatic:
-                        GetField(i, jc, Combine(code[++i], code[++i]), true);
+                        GetField(address, jc, Combine(code[++i], code[++i]), true);
                         break;
                     case JavaOpCode.PutField:
-                        SetField(i, jc, Combine(code[++i], code[++i]), false);
+                        SetField(address, jc, Combine(code[++i], code[++i]), false);
                         break;
                     case JavaOpCode.PutStatic:
-                        SetField(i, jc, Combine(code[++i], code[++i]), true);
+                        SetField(address, jc, Combine(code[++i], code[++i]), true);
+                        break;
+                    case JavaOpCode.NewArray:
+                        Emit(address, OpCodes.Newarr, GetArrayType((PrimitiveArrayType)code[++i]));
+                        break;
+                    case JavaOpCode.ANewArray:
+                        Emit(address, OpCodes.Newarr, module.GetJavaType(jc, Combine(code[++i], code[++i])));
+                        break;
+                    case JavaOpCode.BAStore:
+                        Emit(address, OpCodes.Stelem_I1);
+                        break;
+                    case JavaOpCode.CAStore:
+                    case JavaOpCode.SAStore:
+                        Emit(address, OpCodes.Stelem_I2);
+                        break;
+                    case JavaOpCode.IAStore:
+                        Emit(address, OpCodes.Stelem_I4);
+                        break;
+                    case JavaOpCode.LAStore:
+                        Emit(address, OpCodes.Stelem_I8);
+                        break;
+                    case JavaOpCode.FAStore:
+                        Emit(address, OpCodes.Stelem_R4);
+                        break;
+                    case JavaOpCode.DAStore:
+                        Emit(address, OpCodes.Stelem_R8);
+                        break;
+                    case JavaOpCode.AAStore:
+                        Emit(address, OpCodes.Stelem_Ref);
+                        break;
+                    case JavaOpCode.BALoad:
+                        Emit(address, OpCodes.Ldelem_U1);
+                        break;
+                    case JavaOpCode.CALoad:
+                        Emit(address, OpCodes.Ldelem_U2);
+                        break;
+                    case JavaOpCode.SALoad:
+                        Emit(address, OpCodes.Ldelem_I2);
+                        break;
+                    case JavaOpCode.IALoad:
+                        Emit(address, OpCodes.Ldelem_I4);
+                        break;
+                    case JavaOpCode.LALoad:
+                        Emit(address, OpCodes.Ldelem_I8);
+                        break;
+                    case JavaOpCode.FALoad:
+                        Emit(address, OpCodes.Ldelem_R4);
+                        break;
+                    case JavaOpCode.DALoad:
+                        Emit(address, OpCodes.Ldelem_R8);
+                        break;
+                    case JavaOpCode.AALoad:
+                        Emit(address, OpCodes.Ldelem_Ref);
+                        break;
+                    case JavaOpCode.CheckCast:
+                        Emit(address, OpCodes.Castclass, module.GetJavaType(jc, Combine(code[++i], code[++i])));
+                        break;
+                    case JavaOpCode.InstanceOf:
+                        Emit(address, OpCodes.Isinst, module.GetJavaType(jc, Combine(code[++i], code[++i])));
                         break;
                     default:
-                        throw new Exception($"Unknown opcode '{op}'.");
+                        missing.Add(op);
+                        //throw new Exception($"Unknown opcode '{op}'.");
+                        return;
                 }
             }
 
-            foreach (var jump in jumps)
-            {
-                Console.WriteLine($"Starting jump in: {jc.GetName()}");
-                Instruction targetInstruction = first[jump.TargetAddress];
-                Instruction newInstruction = il.Create(jump.OpCode, targetInstruction);
-                il.Replace(jump.Instruction, newInstruction);
-                Console.WriteLine($"Finished jump in: {jc.GetName()}");
-            }
+            AddLocals();
+            SetupJumps();
         }
 
         private static List<int> GetWides(string[] types, bool isStatic)
@@ -355,6 +471,31 @@ namespace JavaNet.Jvm.Converter
         private static ushort Combine(byte a, byte b) => (ushort)((a << 8) | b);
 
         private static int Combine(byte a, byte b, byte c, byte d) => (a << 24) | (b << 16) | (c << 8) | d;
+
+        private void AddLocals()
+        {
+            int i = 0;
+            foreach (KeyValuePair<int, VariableDefinition> pair in locals.OrderBy(x => x.Key))
+            {
+                for (; i < pair.Key; i++)
+                {
+                    il.Body.Variables.Add(new VariableDefinition(module.TypeSystem.Object));
+                }
+
+                il.Body.Variables.Add(pair.Value);
+                i++;
+            }
+        }
+
+        private void SetupJumps()
+        {
+            foreach (var jump in jumps)
+            {
+                Instruction targetInstruction = first[jump.TargetAddress];
+                Instruction newInstruction = il.Create(jump.OpCode, targetInstruction);
+                il.Replace(jump.Instruction, newInstruction);
+            }
+        }
 
         private void Emit(int instructionIndex, OpCode opCode)
             => Emit(instructionIndex, il.Create(opCode));
@@ -384,6 +525,9 @@ namespace JavaNet.Jvm.Converter
             => Emit(instructionIndex, il.Create(opCode, arg));
 
         private void Emit(int instructionIndex, OpCode opCode, FieldReference arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, VariableDefinition arg)
             => Emit(instructionIndex, il.Create(opCode, arg));
 
         private void Emit(int instructionIndex, Instruction instruction)
@@ -434,7 +578,7 @@ namespace JavaNet.Jvm.Converter
             }
         }
 
-        private void Load(int instructionIndex, int index, bool isStatic, string[] parametersTypes)
+        private void Load(int instructionIndex, int index, bool isStatic, string[] parametersTypes, JavaOpCode op)
         {
             // 64 bit parameters take up two slots.
             index -= GetWides(parametersTypes, isStatic).Count(x => x < index);
@@ -469,6 +613,12 @@ namespace JavaNet.Jvm.Converter
             else
             {
                 index -= parameters;
+                if (!locals.TryGetValue(index, out VariableDefinition var))
+                {
+                    var = new VariableDefinition(GetTargetType(op));
+                    locals.Add(index, var);
+                }
+
                 switch (index)
                 {
                     case 0:
@@ -484,13 +634,13 @@ namespace JavaNet.Jvm.Converter
                         Emit(instructionIndex, OpCodes.Ldloc_3);
                         return;
                     default:
-                        Emit(instructionIndex, OpCodes.Ldloc, (ushort)index);
+                        Emit(instructionIndex, OpCodes.Ldloc, var);
                         return;
                 }
             }
         }
 
-        private void Store(int instructionIndex, int index, bool isStatic, string[] parametersTypes)
+        private void Store(int instructionIndex, int index, bool isStatic, string[] parametersTypes, JavaOpCode op)
         {
             // 64 bit parameters take up two slots.
             index -= GetWides(parametersTypes, isStatic).Count(x => x < index);
@@ -508,6 +658,12 @@ namespace JavaNet.Jvm.Converter
             else
             {
                 index -= parameters;
+                if (!locals.TryGetValue(index, out VariableDefinition var))
+                {
+                    var = new VariableDefinition(GetTargetType(op));
+                    locals.Add(index, var);
+                }
+
                 switch (index)
                 {
                     case 0:
@@ -523,9 +679,99 @@ namespace JavaNet.Jvm.Converter
                         Emit(instructionIndex, OpCodes.Stloc_3);
                         return;
                     default:
-                        Emit(instructionIndex, OpCodes.Stloc, (ushort)index);
+                        Emit(instructionIndex, OpCodes.Stloc, var);
                         return;
                 }
+            }
+        }
+
+        private TypeReference GetTargetType(JavaOpCode op)
+        {
+            switch (op)
+            {
+                case JavaOpCode.IInc:
+                case JavaOpCode.IStore0:
+                case JavaOpCode.IStore1:
+                case JavaOpCode.IStore2:
+                case JavaOpCode.IStore3:
+                case JavaOpCode.IStore:
+                case JavaOpCode.ILoad0:
+                case JavaOpCode.ILoad1:
+                case JavaOpCode.ILoad2:
+                case JavaOpCode.ILoad3:
+                case JavaOpCode.ILoad:
+                    return module.TypeSystem.Int32;
+                case JavaOpCode.LStore0:
+                case JavaOpCode.LStore1:
+                case JavaOpCode.LStore2:
+                case JavaOpCode.LStore3:
+                case JavaOpCode.LStore:
+                case JavaOpCode.LLoad0:
+                case JavaOpCode.LLoad1:
+                case JavaOpCode.LLoad2:
+                case JavaOpCode.LLoad3:
+                case JavaOpCode.LLoad:
+                    return module.TypeSystem.Int64;
+                case JavaOpCode.FStore0:
+                case JavaOpCode.FStore1:
+                case JavaOpCode.FStore2:
+                case JavaOpCode.FStore3:
+                case JavaOpCode.FStore:
+                case JavaOpCode.FLoad0:
+                case JavaOpCode.FLoad1:
+                case JavaOpCode.FLoad2:
+                case JavaOpCode.FLoad3:
+                case JavaOpCode.FLoad:
+                    return module.TypeSystem.Single;
+                case JavaOpCode.DStore0:
+                case JavaOpCode.DStore1:
+                case JavaOpCode.DStore2:
+                case JavaOpCode.DStore3:
+                case JavaOpCode.DStore:
+                case JavaOpCode.DLoad0:
+                case JavaOpCode.DLoad1:
+                case JavaOpCode.DLoad2:
+                case JavaOpCode.DLoad3:
+                case JavaOpCode.DLoad:
+                    return module.TypeSystem.Double;
+                case JavaOpCode.AStore0:
+                case JavaOpCode.AStore1:
+                case JavaOpCode.AStore2:
+                case JavaOpCode.AStore3:
+                case JavaOpCode.AStore:
+                case JavaOpCode.ALoad0:
+                case JavaOpCode.ALoad1:
+                case JavaOpCode.ALoad2:
+                case JavaOpCode.ALoad3:
+                case JavaOpCode.ALoad:
+                    return module.TypeSystem.Object;
+                default:
+                    throw new ArgumentException($"Could not find target type for opcode '{op}'.");
+            }
+        }
+
+        private TypeReference GetArrayType(PrimitiveArrayType type)
+        {
+            switch (type)
+            {
+                case PrimitiveArrayType.Boolean:
+                    return module.TypeSystem.Boolean;
+                case PrimitiveArrayType.Byte:
+                    return module.TypeSystem.Byte;
+                case PrimitiveArrayType.Char:
+                    return module.TypeSystem.Char;
+                case PrimitiveArrayType.Double:
+                    return module.TypeSystem.Double;
+                case PrimitiveArrayType.Float:
+                    return module.TypeSystem.Single;
+                case PrimitiveArrayType.Int:
+                    return module.TypeSystem.Int32;
+                case PrimitiveArrayType.Long:
+                    return module.TypeSystem.Int64;
+                case PrimitiveArrayType.Short:
+                    return module.TypeSystem.Int16;
+                default:
+                    throw new ArgumentException($"Unknown primitive array type: {type}");
             }
         }
 
@@ -557,7 +803,7 @@ namespace JavaNet.Jvm.Converter
             OpCode opCode = isStatic ? OpCodes.Call : OpCodes.Callvirt;
 
             string objectTypeName = jc.GetConstant<JavaConstantUtf8>(classNameIndex).Value;
-            TypeDefinition objectType = FindType(objectTypeName);
+            TypeDefinition objectType = module.GetJavaTypeDefinition(objectTypeName);
             if (!objectType.IsPrimitive || name != "clone")
             {
                 Emit(instructionIndex, il.Create(opCode, FindMethod(objectType, name, descriptor)));
@@ -618,15 +864,12 @@ namespace JavaNet.Jvm.Converter
             Emit(instructionIndex, opCode, field);
         }
 
-        private TypeDefinition FindType(string name)
-            => name[0] == '[' ? module.GetDescriptorType(name).Resolve() : module.GetJavaType(name);
-
         private FieldDefinition FindField(JavaClass jc, ushort index)
         {
             JavaConstantFieldReference constant = jc.GetConstant<JavaConstantFieldReference>(index);
             JavaConstantNameAndType nameAndType = jc.GetConstant<JavaConstantNameAndType>(constant.NameAndTypeIndex);
             string objectTypeName = jc.GetConstant<JavaConstantUtf8>(jc.GetConstant<JavaConstantClass>(constant.ClassIndex).NameIndex).Value;
-            TypeDefinition objectType = FindType(objectTypeName);
+            TypeDefinition objectType = module.GetJavaTypeDefinition(objectTypeName);
             string fieldName = jc.GetConstant<JavaConstantUtf8>(nameAndType.NameIndex).Value;
             TypeReference fieldType = module.GetReturnType(jc.GetConstant<JavaConstantUtf8>(nameAndType.DescriptorIndex).Value);
             return FindFieldInner(objectType, fieldName, fieldType.FullName);

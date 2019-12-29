@@ -18,14 +18,32 @@ namespace JavaNet.Jvm.Converter
         /// <param name="module">The module.</param>
         /// <param name="javaTypeName">Name of the java type.</param>
         /// <returns>The type reference.</returns>
-        public static TypeDefinition GetJavaType(this ModuleDefinition module, string javaTypeName)
+        public static TypeReference GetJavaType(this ModuleDefinition module, string javaTypeName)
         {
             Guard.NotNull(ref module, nameof(module));
             Guard.NotNull(ref javaTypeName, nameof(javaTypeName));
 
+            if (javaTypeName[0] == '[')
+            {
+                return module.GetDescriptorType(javaTypeName);
+            }
+
             string dotnetNamespace = IdentifierHelper.GetDotNetNamespace(javaTypeName);
             string dotnetClass = IdentifierHelper.GetDotNetClassName(javaTypeName);
             return module.GetType(dotnetNamespace, dotnetClass);
+        }
+
+        /// <summary>
+        /// Gets the type definition from a module from a java type names.
+        /// </summary>
+        /// <param name="module">The module.</param>
+        /// <param name="javaTypeName">Name of the java type.</param>
+        /// <returns>The type reference.</returns>
+        public static TypeDefinition GetJavaTypeDefinition(this ModuleDefinition module, string javaTypeName)
+        {
+            Guard.NotNull(ref module, nameof(module));
+            Guard.NotNull(ref javaTypeName, nameof(javaTypeName));
+            return module.GetJavaType(javaTypeName).Resolve();
         }
 
         /// <summary>
@@ -88,7 +106,7 @@ namespace JavaNet.Jvm.Converter
                 case 'Z':
                     return types.Boolean;
                 case '[':
-                    return new ArrayType(GetDescriptorType(module, descriptor.Substring(1)));
+                    return new ArrayType(module.GetDescriptorType(descriptor.Substring(1)));
                 default:
                     throw new ArgumentException($"Illegal first character found '{descriptor[0]}'.");
             }
@@ -130,7 +148,7 @@ namespace JavaNet.Jvm.Converter
         /// <param name="jc">The java class.</param>
         /// <param name="classIndex">Index of the class.</param>
         /// <returns>The type reference.</returns>
-        public static TypeDefinition GetJavaType(this ModuleDefinition module, JavaClass jc, ushort classIndex)
+        public static TypeReference GetJavaType(this ModuleDefinition module, JavaClass jc, ushort classIndex)
         {
             Guard.NotNull(ref module, nameof(module));
             Guard.NotNull(ref jc, nameof(jc));
@@ -139,6 +157,22 @@ namespace JavaNet.Jvm.Converter
             JavaConstantClass constant = jc.GetConstant<JavaConstantClass>(classIndex);
             string name = jc.GetConstant<JavaConstantUtf8>(constant.NameIndex).Value;
             return module.GetJavaType(name);
+        }
+
+        /// <summary>
+        /// Gets the type definition from a module from a java class and constant pool index.
+        /// </summary>
+        /// <param name="module">The module.</param>
+        /// <param name="jc">The java class.</param>
+        /// <param name="classIndex">Index of the class.</param>
+        /// <returns>The type reference.</returns>
+        public static TypeDefinition GetJavaTypeDefinition(this ModuleDefinition module, JavaClass jc, ushort classIndex)
+        {
+            Guard.NotNull(ref module, nameof(module));
+            Guard.NotNull(ref jc, nameof(jc));
+            Guard.NotNull(ref classIndex, nameof(classIndex));
+
+            return module.GetJavaType(jc, classIndex).Resolve();
         }
 
         /// <summary>

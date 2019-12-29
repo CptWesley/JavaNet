@@ -176,7 +176,7 @@ namespace JavaNet.Jvm.Converter
         /// <returns>The bytes representing the byte code.</returns>
         public static byte[] GetCode(this JavaMethod jm)
         {
-            return jm.GetAttribute<JavaAttributeCode>().Code;
+            return jm.GetAttribute<JavaAttributeCode>()?.Code;
         }
     }
 }
