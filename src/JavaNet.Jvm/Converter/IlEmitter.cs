@@ -22,6 +22,7 @@ namespace JavaNet.Jvm.Converter
         private readonly Dictionary<int, Instruction> first = new Dictionary<int, Instruction>();
         private readonly List<(Instruction Instruction, OpCode OpCode, int TargetAddress)> jumps = new List<(Instruction, OpCode, int)>();
         private readonly Dictionary<int, VariableDefinition> locals = new Dictionary<int, VariableDefinition>();
+        private readonly List<VariableDefinition> temps = new List<VariableDefinition>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IlEmitter"/> class.
@@ -47,6 +48,7 @@ namespace JavaNet.Jvm.Converter
             Guard.NotNull(ref code, nameof(code));
             Guard.NotNull(ref parametersTypes, nameof(parametersTypes));
 
+            VariableDefinition[] temps;
             for (int i = 0; i < code.Length; i++)
             {
                 int address = i;
@@ -291,6 +293,22 @@ namespace JavaNet.Jvm.Converter
                     case JavaOpCode.Dup:
                         Emit(address, OpCodes.Dup);
                         break;
+                    case JavaOpCode.Dup2:
+                        temps = GetTemps(2);
+                        Emit(address, OpCodes.Stloc, temps[0]);
+                        Emit(address, OpCodes.Dup);
+                        Emit(address, OpCodes.Stloc, temps[1]);
+                        Emit(address, OpCodes.Ldloc, temps[0]);
+                        Emit(address, OpCodes.Ldloc, temps[1]);
+                        Emit(address, OpCodes.Ldloc, temps[0]);
+                        break;
+                    case JavaOpCode.Swap:
+                        temps = GetTemps(2);
+                        Emit(address, OpCodes.Stloc, temps[0]);
+                        Emit(address, OpCodes.Stloc, temps[1]);
+                        Emit(address, OpCodes.Ldloc, temps[0]);
+                        Emit(address, OpCodes.Ldloc, temps[1]);
+                        break;
                     case JavaOpCode.InvokeVirtual:
                     case JavaOpCode.InvokeSpecial:
                         Call(address, jc, Combine(code[++i], code[++i]), false);
@@ -484,6 +502,11 @@ namespace JavaNet.Jvm.Converter
                 il.Body.Variables.Add(pair.Value);
                 i++;
             }
+
+            foreach (VariableDefinition temp in temps)
+            {
+                il.Body.Variables.Add(temp);
+            }
         }
 
         private void SetupJumps()
@@ -494,6 +517,16 @@ namespace JavaNet.Jvm.Converter
                 Instruction newInstruction = il.Create(jump.OpCode, targetInstruction);
                 il.Replace(jump.Instruction, newInstruction);
             }
+        }
+
+        private VariableDefinition[] GetTemps(int amount)
+        {
+            for (int i = 0; i < amount - temps.Count; i++)
+            {
+                temps.Add(new VariableDefinition(module.TypeSystem.Object));
+            }
+
+            return temps.Take(amount).ToArray();
         }
 
         private void Emit(int instructionIndex, OpCode opCode)
