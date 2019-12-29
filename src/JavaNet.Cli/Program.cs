@@ -39,13 +39,6 @@ namespace JavaNet.Cli
             byte[] bytes = converter.Convert();
             File.WriteAllBytes("rt.dll", bytes);
 
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            foreach (var x in IlEmitter.missing)
-            {
-                Console.WriteLine(x);
-            }
-            Console.ForegroundColor = ConsoleColor.White;
-
             foreach (Type type in Assembly.Load(bytes).GetTypes())
             {
                 Console.WriteLine($"Type: {type.FullName}");
