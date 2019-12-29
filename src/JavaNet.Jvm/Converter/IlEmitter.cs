@@ -17,7 +17,6 @@ namespace JavaNet.Jvm.Converter
     /// </summary>
     public class IlEmitter
     {
-        public static readonly HashSet<JavaOpCode> missing = new HashSet<JavaOpCode>();
         private readonly ILProcessor il;
         private readonly ModuleDefinition module;
         private readonly Dictionary<int, Instruction> first = new Dictionary<int, Instruction>();
@@ -444,9 +443,7 @@ namespace JavaNet.Jvm.Converter
                         Emit(address, OpCodes.Isinst, module.GetJavaType(jc, Combine(code[++i], code[++i])));
                         break;
                     default:
-                        missing.Add(op);
-                        //throw new Exception($"Unknown opcode '{op}'.");
-                        return;
+                        throw new Exception($"Unknown opcode '{op}'.");
                 }
             }
 
@@ -779,8 +776,8 @@ namespace JavaNet.Jvm.Converter
         {
             IJavaConstant constant = jc.ConstantPool[index];
 
-            ushort classIndex = ushort.MaxValue;
-            ushort nameAndTypeIndex = ushort.MaxValue;
+            ushort classIndex;
+            ushort nameAndTypeIndex;
             if (constant is JavaConstantMethodReference m)
             {
                 classIndex = m.ClassIndex;

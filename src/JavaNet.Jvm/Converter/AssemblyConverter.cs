@@ -94,17 +94,6 @@ namespace JavaNet.Jvm.Converter
 
         private static byte[] AssemblyDefinitionToBytes(AssemblyDefinition assembly)
         {
-            Console.WriteLine($"Modules:");
-            foreach (var x in assembly.Modules)
-            {
-                Console.WriteLine($"--- {x.Name}");
-            }
-            Console.WriteLine($"Module References:");
-            foreach (var x in assembly.MainModule.ModuleReferences)
-            {
-                Console.WriteLine($"--- {x.Name}");
-            }
-
             using (MemoryStream ms = new MemoryStream())
             {
                 assembly.Write(ms);
@@ -165,17 +154,7 @@ namespace JavaNet.Jvm.Converter
             ILProcessor il = method.Body?.GetILProcessor();
             if (il != null && code != null)
             {
-                try
-                {
-                    new IlEmitter(il, module).EmitMethod(jc, code, method.IsStatic, parameterTypes);
-                }
-                catch (Exception e)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e);
-                    Console.WriteLine();
-                    Console.ResetColor();
-                }
+                new IlEmitter(il, module).EmitMethod(jc, code, method.IsStatic, parameterTypes);
             }
         }
     }
