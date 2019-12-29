@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using JavaNet.Jvm.Parser;
+using JavaNet.Jvm.Parser.Attributes;
 using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Util;
 using Mono.Cecil;
@@ -125,6 +126,34 @@ namespace JavaNet.Jvm.Converter
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Gets the attributes of the given type.
+        /// </summary>
+        /// <typeparam name="T">The type of the attributes.</typeparam>
+        /// <param name="jc">The java class.</param>
+        /// <returns>The attributes of the given type.</returns>
+        public static T[] GetAttributes<T>(this JavaClass jc)
+            where T : IJavaAttribute
+        {
+            Guard.NotNull(ref jc, nameof(jc));
+
+            return jc.Attributes.Where(x => x is T).Select(x => (T)x).ToArray();
+        }
+
+        /// <summary>
+        /// Gets the attribute of the given type.
+        /// </summary>
+        /// <typeparam name="T">The type of the attribute.</typeparam>
+        /// <param name="jc">The java class.</param>
+        /// <returns>The attribute of the given type.</returns>
+        public static T GetAttribute<T>(this JavaClass jc)
+            where T : IJavaAttribute
+        {
+            Guard.NotNull(ref jc, nameof(jc));
+
+            return jc.GetAttributes<T>().FirstOrDefault();
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using JavaNet.Jvm.Parser;
 using JavaNet.Jvm.Parser.Attributes;
 using JavaNet.Jvm.Parser.Constants;
@@ -132,17 +131,7 @@ namespace JavaNet.Jvm.Converter
         {
             Guard.NotNull(ref jm, nameof(jm));
 
-            List<T> result = new List<T>();
-
-            foreach (IJavaAttribute attribute in jm.Attributes)
-            {
-                if (attribute is T matched)
-                {
-                    result.Add(matched);
-                }
-            }
-
-            return result.ToArray();
+            return jm.Attributes.Where(x => x is T).Select(x => (T)x).ToArray();
         }
 
         /// <summary>

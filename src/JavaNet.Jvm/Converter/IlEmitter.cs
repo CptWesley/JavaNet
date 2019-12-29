@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using JavaNet.Jvm.Parser;
+using JavaNet.Jvm.Parser.Attributes;
 using JavaNet.Jvm.Parser.Constants;
 using JavaNet.Jvm.Parser.Instructions;
 using JavaNet.Jvm.Util;
@@ -245,10 +246,20 @@ namespace JavaNet.Jvm.Converter
                     case JavaOpCode.Dup:
                         Emit(i, OpCodes.Dup);
                         break;
-                    case JavaOpCode.InvokeSpecial:
                     case JavaOpCode.InvokeVirtual:
+                    case JavaOpCode.InvokeSpecial:
+                        Call(i, jc, Combine(code[++i], code[++i]), false);
+                        break;
                     case JavaOpCode.InvokeInterface:
-                        CallVirt(i, jc, Combine(code[++i], code[++i]));
+                        Call(i, jc, Combine(code[++i], code[++i]), false);
+                        i += 2;
+                        break;
+                    case JavaOpCode.InvokeDynamic:
+                        InvokeDynamic(i, jc, Combine(code[++i], code[++i]));
+                        i += 2;
+                        break;
+                    case JavaOpCode.InvokeStatic:
+                        Call(i, jc, Combine(code[++i], code[++i]), true);
                         break;
                     case JavaOpCode.Goto:
                         EmitJump(i, OpCodes.Br, Combine(code[++i], code[++i]));
@@ -296,6 +307,21 @@ namespace JavaNet.Jvm.Converter
                         break;
                     case JavaOpCode.IfNonNull:
                         EmitJump(i, OpCodes.Brtrue, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.ArrayLength:
+                        Emit(i, OpCodes.Ldlen);
+                        break;
+                    case JavaOpCode.GetField:
+                        GetField(i, jc, Combine(code[++i], code[++i]), false);
+                        break;
+                    case JavaOpCode.GetStatic:
+                        GetField(i, jc, Combine(code[++i], code[++i]), true);
+                        break;
+                    case JavaOpCode.PutField:
+                        SetField(i, jc, Combine(code[++i], code[++i]), false);
+                        break;
+                    case JavaOpCode.PutStatic:
+                        SetField(i, jc, Combine(code[++i], code[++i]), true);
                         break;
                     default:
                         throw new Exception($"Unknown opcode '{op}'.");
@@ -355,6 +381,9 @@ namespace JavaNet.Jvm.Converter
             => Emit(instructionIndex, il.Create(opCode, arg));
 
         private void Emit(int instructionIndex, OpCode opCode, MethodReference arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, FieldReference arg)
             => Emit(instructionIndex, il.Create(opCode, arg));
 
         private void Emit(int instructionIndex, Instruction instruction)
@@ -500,7 +529,7 @@ namespace JavaNet.Jvm.Converter
             }
         }
 
-        private void CallVirt(int instructionIndex, JavaClass jc, ushort index)
+        private void Call(int instructionIndex, JavaClass jc, ushort index, bool isStatic)
         {
             IJavaConstant constant = jc.ConstantPool[index];
 
@@ -516,29 +545,130 @@ namespace JavaNet.Jvm.Converter
                 classIndex = i.ClassIndex;
                 nameAndTypeIndex = i.NameAndTypeIndex;
             }
+            else
+            {
+                throw new Exception($"Found constant of invalid type '{constant.GetType().FullName}'.");
+            }
 
             ushort classNameIndex = jc.GetConstant<JavaConstantClass>(classIndex).NameIndex;
             JavaConstantNameAndType nameAndType = jc.GetConstant<JavaConstantNameAndType>(nameAndTypeIndex);
             string descriptor = jc.GetConstant<JavaConstantUtf8>(nameAndType.DescriptorIndex).Value;
             string name = jc.GetConstant<JavaConstantUtf8>(nameAndType.NameIndex).Value;
+            OpCode opCode = isStatic ? OpCodes.Call : OpCodes.Callvirt;
 
             string objectTypeName = jc.GetConstant<JavaConstantUtf8>(classNameIndex).Value;
-            TypeDefinition objectType = objectTypeName[0] == '[' ? module.GetDescriptorType(objectTypeName).Resolve() : module.GetJavaType(objectTypeName);
+            TypeDefinition objectType = FindType(objectTypeName);
             if (!objectType.IsPrimitive || name != "clone")
             {
-                Emit(instructionIndex, il.Create(OpCodes.Callvirt, FindMethod(objectType, name, descriptor)));
+                Emit(instructionIndex, il.Create(opCode, FindMethod(objectType, name, descriptor)));
             }
         }
 
-        private MethodReference FindMethod(TypeDefinition target, string javaName, string descriptor)
+        private void InvokeDynamic(int instructionIndex, JavaClass jc, ushort index)
         {
-            bool print = javaName == "descriptorString";
+            JavaConstantInvokeDynamic constant = jc.GetConstant<JavaConstantInvokeDynamic>(index);
+            JavaAttributeBootstrapMethods bootstrapTable = jc.GetAttribute<JavaAttributeBootstrapMethods>();
+            JavaBootstrapMethod bootstrapMethod = bootstrapTable.BootstrapMethods[constant.BootstrapMethodAttributeIndex];
+            JavaConstantMethodHandle methodHandle = jc.GetConstant<JavaConstantMethodHandle>(bootstrapMethod.MethodReference);
 
+            foreach (ushort i in bootstrapMethod.Arguments)
+            {
+                Ldc(instructionIndex, jc, i);
+            }
+
+            switch (methodHandle.ReferenceKind)
+            {
+                case ReferenceKind.GetField:
+                    GetField(instructionIndex, jc, methodHandle.ReferenceIndex, false);
+                    break;
+                case ReferenceKind.GetStatic:
+                    GetField(instructionIndex, jc, methodHandle.ReferenceIndex, true);
+                    break;
+                case ReferenceKind.PutField:
+                    SetField(instructionIndex, jc, methodHandle.ReferenceIndex, false);
+                    break;
+                case ReferenceKind.PutStatic:
+                    SetField(instructionIndex, jc, methodHandle.ReferenceIndex, true);
+                    break;
+                case ReferenceKind.InvokeVirtual:
+                case ReferenceKind.NewInvokeSpecial:
+                case ReferenceKind.InvokeSpecial:
+                case ReferenceKind.InvokeInterface:
+                    Call(instructionIndex, jc, methodHandle.ReferenceIndex, false);
+                    break;
+                case ReferenceKind.InvokeStatic:
+                    Call(instructionIndex, jc, methodHandle.ReferenceIndex, true);
+                    break;
+                default:
+                    throw new Exception($"Unknown reference kind '{methodHandle.ReferenceKind}'.");
+            }
+        }
+
+        private void GetField(int instructionIndex, JavaClass jc, ushort index, bool isStatic)
+        {
+            FieldReference field = FindField(jc, index);
+            OpCode opCode = isStatic ? OpCodes.Ldsfld : OpCodes.Ldfld;
+            Emit(instructionIndex, opCode, field);
+        }
+
+        private void SetField(int instructionIndex, JavaClass jc, ushort index, bool isStatic)
+        {
+            FieldReference field = FindField(jc, index);
+            OpCode opCode = isStatic ? OpCodes.Stsfld : OpCodes.Stfld;
+            Emit(instructionIndex, opCode, field);
+        }
+
+        private TypeDefinition FindType(string name)
+            => name[0] == '[' ? module.GetDescriptorType(name).Resolve() : module.GetJavaType(name);
+
+        private FieldDefinition FindField(JavaClass jc, ushort index)
+        {
+            JavaConstantFieldReference constant = jc.GetConstant<JavaConstantFieldReference>(index);
+            JavaConstantNameAndType nameAndType = jc.GetConstant<JavaConstantNameAndType>(constant.NameAndTypeIndex);
+            string objectTypeName = jc.GetConstant<JavaConstantUtf8>(jc.GetConstant<JavaConstantClass>(constant.ClassIndex).NameIndex).Value;
+            TypeDefinition objectType = FindType(objectTypeName);
+            string fieldName = jc.GetConstant<JavaConstantUtf8>(nameAndType.NameIndex).Value;
+            TypeReference fieldType = module.GetReturnType(jc.GetConstant<JavaConstantUtf8>(nameAndType.DescriptorIndex).Value);
+            return FindFieldInner(objectType, fieldName, fieldType.FullName);
+        }
+
+        private FieldDefinition FindFieldInner(TypeDefinition target, string dotnetName, string fieldTypeName)
+        {
+            string dotnetFullName = $"{fieldTypeName} {target.FullName}::{dotnetName}";
+            FieldDefinition fd = target.Fields.FirstOrDefault(x => x.FullName == dotnetFullName);
+
+            if (fd != null)
+            {
+                return fd;
+            }
+            else if (target.BaseType != null)
+            {
+                fd = FindFieldInner(target.BaseType?.Resolve(), dotnetName, fieldTypeName);
+                if (fd != null)
+                {
+                    return fd;
+                }
+            }
+
+            foreach (TypeDefinition interfaceDefinition in target.Interfaces.Select(x => x.InterfaceType.Resolve()))
+            {
+                fd = FindFieldInner(interfaceDefinition, dotnetName, fieldTypeName);
+                if (fd != null)
+                {
+                    return fd;
+                }
+            }
+
+            return null;
+        }
+
+        private MethodDefinition FindMethod(TypeDefinition target, string javaName, string descriptor)
+        {
             TypeReference returnType = module.GetReturnType(descriptor);
             TypeReference[] parameterTypes = module.GetParameterTypes(descriptor);
             string paramString = string.Join(",", parameterTypes.Select(x => x.FullName));
             string dotnetName = IdentifierHelper.GetDotNetFullName(javaName);
-            MethodReference result = FindMethodInner(target, dotnetName, returnType.FullName, paramString);
+            MethodDefinition result = FindMethodInner(target, dotnetName, returnType.FullName, paramString);
 
             if (result == null)
             {
@@ -548,10 +678,10 @@ namespace JavaNet.Jvm.Converter
             return result;
         }
 
-        private MethodReference FindMethodInner(TypeDefinition target, string dotnetName, string returnTypeName, string paramString)
+        private MethodDefinition FindMethodInner(TypeDefinition target, string dotnetName, string returnTypeName, string paramString)
         {
             string dotnetFullName = $"{returnTypeName} {target.FullName}::{dotnetName}({paramString})";
-            MethodReference md = target.Methods.FirstOrDefault(x => x.FullName == dotnetFullName);
+            MethodDefinition md = target.Methods.FirstOrDefault(x => x.FullName == dotnetFullName);
 
             if (md != null)
             {
