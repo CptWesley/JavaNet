@@ -18,7 +18,7 @@ namespace JavaNet.Jvm.Converter
     {
         private readonly ILProcessor il;
         private readonly ModuleDefinition module;
-        private readonly List<Instruction> first = new List<Instruction>();
+        private readonly Dictionary<int, Instruction> first = new Dictionary<int, Instruction>();
         private readonly List<(Instruction Instruction, OpCode OpCode, int TargetAddress)> jumps = new List<(Instruction, OpCode, int)>();
 
         /// <summary>
@@ -45,15 +45,13 @@ namespace JavaNet.Jvm.Converter
             Guard.NotNull(ref code, nameof(code));
             Guard.NotNull(ref parametersTypes, nameof(parametersTypes));
 
-            int address = 0;
-
             for (int i = 0; i < code.Length; i++)
             {
                 JavaOpCode op = (JavaOpCode)code[i];
                 switch (op)
                 {
                     case JavaOpCode.Nop:
-                        Emit(address, il.Create(OpCodes.Nop));
+                        Emit(i, OpCodes.Nop);
                         break;
                     case JavaOpCode.IReturn:
                     case JavaOpCode.LReturn:
@@ -61,219 +59,247 @@ namespace JavaNet.Jvm.Converter
                     case JavaOpCode.DReturn:
                     case JavaOpCode.AReturn:
                     case JavaOpCode.Return:
-                        Emit(address, il.Create(OpCodes.Ret));
+                        Emit(i, OpCodes.Ret);
                         break;
                     case JavaOpCode.ILoad0:
                     case JavaOpCode.LLoad0:
                     case JavaOpCode.FLoad0:
                     case JavaOpCode.DLoad0:
                     case JavaOpCode.ALoad0:
-                        Load(address, 0, isStatic, parametersTypes);
+                        Load(i, 0, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.ILoad1:
                     case JavaOpCode.LLoad1:
                     case JavaOpCode.FLoad1:
                     case JavaOpCode.DLoad1:
                     case JavaOpCode.ALoad1:
-                        Load(address, 1, isStatic, parametersTypes);
+                        Load(i, 1, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.ILoad2:
                     case JavaOpCode.LLoad2:
                     case JavaOpCode.FLoad2:
                     case JavaOpCode.DLoad2:
                     case JavaOpCode.ALoad2:
-                        Load(address, 2, isStatic, parametersTypes);
+                        Load(i, 2, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.ILoad3:
                     case JavaOpCode.LLoad3:
                     case JavaOpCode.FLoad3:
                     case JavaOpCode.DLoad3:
                     case JavaOpCode.ALoad3:
-                        Load(address, 3, isStatic, parametersTypes);
+                        Load(i, 3, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.ILoad:
                     case JavaOpCode.LLoad:
                     case JavaOpCode.FLoad:
                     case JavaOpCode.DLoad:
                     case JavaOpCode.ALoad:
-                        Load(address, code[++i], isStatic, parametersTypes);
+                        Load(i, code[++i], isStatic, parametersTypes);
                         break;
                     case JavaOpCode.IStore0:
                     case JavaOpCode.LStore0:
                     case JavaOpCode.FStore0:
                     case JavaOpCode.DStore0:
                     case JavaOpCode.AStore0:
-                        Store(address, 0, isStatic, parametersTypes);
+                        Store(i, 0, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.IStore1:
                     case JavaOpCode.LStore1:
                     case JavaOpCode.FStore1:
                     case JavaOpCode.DStore1:
                     case JavaOpCode.AStore1:
-                        Store(address, 1, isStatic, parametersTypes);
+                        Store(i, 1, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.IStore2:
                     case JavaOpCode.LStore2:
                     case JavaOpCode.FStore2:
                     case JavaOpCode.DStore2:
                     case JavaOpCode.AStore2:
-                        Store(address, 2, isStatic, parametersTypes);
+                        Store(i, 2, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.IStore3:
                     case JavaOpCode.LStore3:
                     case JavaOpCode.FStore3:
                     case JavaOpCode.DStore3:
                     case JavaOpCode.AStore3:
-                        Store(address, 3, isStatic, parametersTypes);
+                        Store(i, 3, isStatic, parametersTypes);
                         break;
                     case JavaOpCode.IStore:
                     case JavaOpCode.LStore:
                     case JavaOpCode.FStore:
                     case JavaOpCode.DStore:
                     case JavaOpCode.AStore:
-                        Store(address, code[++i], isStatic, parametersTypes);
+                        Store(i, code[++i], isStatic, parametersTypes);
                         break;
                     case JavaOpCode.IConstM1:
-                        Emit(address, il.Create(OpCodes.Ldc_I4_M1));
+                        Emit(i, OpCodes.Ldc_I4_M1);
                         break;
                     case JavaOpCode.IConst0:
-                        Emit(address, il.Create(OpCodes.Ldc_I4_0));
+                        Emit(i, OpCodes.Ldc_I4_0);
                         break;
                     case JavaOpCode.IConst1:
-                        Emit(address, il.Create(OpCodes.Ldc_I4_1));
+                        Emit(i, OpCodes.Ldc_I4_1);
                         break;
                     case JavaOpCode.IConst2:
-                        Emit(address, il.Create(OpCodes.Ldc_I4_2));
+                        Emit(i, OpCodes.Ldc_I4_2);
                         break;
                     case JavaOpCode.IConst3:
-                        Emit(address, il.Create(OpCodes.Ldc_I4_3));
+                        Emit(i, OpCodes.Ldc_I4_3);
                         break;
                     case JavaOpCode.IConst4:
-                        Emit(address, il.Create(OpCodes.Ldc_I4_4));
+                        Emit(i, OpCodes.Ldc_I4_4);
                         break;
                     case JavaOpCode.IConst5:
-                        Emit(address, il.Create(OpCodes.Ldc_I4_5));
+                        Emit(i, OpCodes.Ldc_I4_5);
                         break;
                     case JavaOpCode.LConst0:
-                        Emit(address, il.Create(OpCodes.Ldc_I8, 0L));
+                        Emit(i, OpCodes.Ldc_I8, 0L);
                         break;
                     case JavaOpCode.LConst1:
-                        Emit(address, il.Create(OpCodes.Ldc_I8, 1L));
+                        Emit(i, OpCodes.Ldc_I8, 1L);
                         break;
                     case JavaOpCode.FConst0:
-                        Emit(address, il.Create(OpCodes.Ldc_R4, 0f));
+                        Emit(i, OpCodes.Ldc_R4, 0f);
                         break;
                     case JavaOpCode.FConst1:
-                        Emit(address, il.Create(OpCodes.Ldc_R4, 1f));
+                        Emit(i, OpCodes.Ldc_R4, 1f);
                         break;
                     case JavaOpCode.FConst2:
-                        Emit(address, il.Create(OpCodes.Ldc_R4, 2f));
+                        Emit(i, OpCodes.Ldc_R4, 2f);
                         break;
                     case JavaOpCode.DConst0:
-                        Emit(address, il.Create(OpCodes.Ldc_R8, 0d));
+                        Emit(i, OpCodes.Ldc_R8, 0d);
                         break;
                     case JavaOpCode.DConst1:
-                        Emit(address, il.Create(OpCodes.Ldc_R8, 1d));
+                        Emit(i, OpCodes.Ldc_R8, 1d);
                         break;
                     case JavaOpCode.AConstNull:
-                        Emit(address, il.Create(OpCodes.Ldnull));
+                        Emit(i, OpCodes.Ldnull);
                         break;
                     case JavaOpCode.BiPush:
-                        Emit(address, il.Create(OpCodes.Ldc_I4, (int)code[++i]));
+                        Emit(i, OpCodes.Ldc_I4, (int)code[++i]);
                         break;
                     case JavaOpCode.Ldc:
-                        Ldc(address, jc, code[++i]);
+                        Ldc(i, jc, code[++i]);
                         break;
                     case JavaOpCode.LdcW:
                     case JavaOpCode.Ldc2W:
-                        Ldc(address, jc, Combine(code[++i], code[++i]));
+                        Ldc(i, jc, Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.IAdd:
                     case JavaOpCode.LAdd:
                     case JavaOpCode.FAdd:
                     case JavaOpCode.DAdd:
-                        Emit(address, il.Create(OpCodes.Add));
+                        Emit(i, OpCodes.Add);
                         break;
                     case JavaOpCode.ISub:
                     case JavaOpCode.LSub:
                     case JavaOpCode.FSub:
                     case JavaOpCode.DSub:
-                        Emit(address, il.Create(OpCodes.Sub));
+                        Emit(i, OpCodes.Sub);
                         break;
                     case JavaOpCode.IMul:
                     case JavaOpCode.LMul:
                     case JavaOpCode.FMul:
                     case JavaOpCode.DMul:
-                        Emit(address, il.Create(OpCodes.Mul));
+                        Emit(i, OpCodes.Mul);
                         break;
                     case JavaOpCode.IDiv:
                     case JavaOpCode.LDiv:
                     case JavaOpCode.FDiv:
                     case JavaOpCode.DDiv:
-                        Emit(address, il.Create(OpCodes.Div));
+                        Emit(i, OpCodes.Div);
                         break;
                     case JavaOpCode.IRem:
                     case JavaOpCode.LRem:
                     case JavaOpCode.FRem:
                     case JavaOpCode.DRem:
-                        Emit(address, il.Create(OpCodes.Rem));
+                        Emit(i, OpCodes.Rem);
                         break;
                     case JavaOpCode.I2b:
-                        Emit(address, il.Create(OpCodes.Conv_U1));
+                        Emit(i, OpCodes.Conv_U1);
                         break;
                     case JavaOpCode.I2s:
-                        Emit(address, il.Create(OpCodes.Conv_I2));
+                        Emit(i, OpCodes.Conv_I2);
                         break;
                     case JavaOpCode.L2i:
                     case JavaOpCode.F2i:
                     case JavaOpCode.D2i:
-                        Emit(address, il.Create(OpCodes.Conv_I4));
+                        Emit(i, OpCodes.Conv_I4);
                         break;
                     case JavaOpCode.I2l:
                     case JavaOpCode.F2l:
                     case JavaOpCode.D2l:
-                        Emit(address, il.Create(OpCodes.Conv_I8));
+                        Emit(i, OpCodes.Conv_I8);
                         break;
                     case JavaOpCode.I2f:
                     case JavaOpCode.L2f:
                     case JavaOpCode.D2f:
-                        Emit(address, il.Create(OpCodes.Conv_R4));
+                        Emit(i, OpCodes.Conv_R4);
                         break;
                     case JavaOpCode.I2d:
                     case JavaOpCode.L2d:
                     case JavaOpCode.F2d:
-                        Emit(address, il.Create(OpCodes.Conv_R8));
+                        Emit(i, OpCodes.Conv_R8);
                         break;
                     case JavaOpCode.Dup:
-                        Emit(address, il.Create(OpCodes.Dup));
+                        Emit(i, OpCodes.Dup);
                         break;
                     case JavaOpCode.InvokeSpecial:
                     case JavaOpCode.InvokeVirtual:
-                        CallVirt(address, jc, Combine(code[++i], code[++i]));
+                    case JavaOpCode.InvokeInterface:
+                        CallVirt(i, jc, Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.Goto:
-                        EmitJump(address, OpCodes.Br, Combine(code[++i], code[++i]));
+                        EmitJump(i, OpCodes.Br, Combine(code[++i], code[++i]));
                         break;
                     case JavaOpCode.GotoW:
-                        EmitJump(address, OpCodes.Br, Combine(code[++i], code[++i], code[++i], code[++i]));
+                        EmitJump(i, OpCodes.Br, Combine(code[++i], code[++i], code[++i], code[++i]));
                         break;
                     case JavaOpCode.New:
-                        Emit(address, il.Create(OpCodes.Ldtoken, module.GetJavaType(jc, Combine(code[++i], code[++i]))));
-                        Emit(address, il.Create(OpCodes.Call, module.GetMethod(typeof(Type), "GetTypeFromHandle")));
-                        Emit(address, il.Create(OpCodes.Call, module.GetMethod(typeof(FormatterServices), "GetUninitializedObject")));
+                        Emit(i, OpCodes.Ldtoken, module.GetJavaType(jc, Combine(code[++i], code[++i])));
+                        Emit(i, OpCodes.Call, module.GetMethod(typeof(Type), "GetTypeFromHandle"));
+                        Emit(i, OpCodes.Call, module.GetMethod(typeof(FormatterServices), "GetUninitializedObject"));
                         break;
                     case JavaOpCode.Pop:
-                        Emit(address, il.Create(OpCodes.Pop));
+                        Emit(i, il.Create(OpCodes.Pop));
                         break;
                     case JavaOpCode.Pop2:
-                        Emit(address, il.Create(OpCodes.Pop));
-                        Emit(address, il.Create(OpCodes.Pop));
+                        Emit(i, OpCodes.Pop);
+                        Emit(i, OpCodes.Pop);
+                        break;
+                    case JavaOpCode.AThrow:
+                        Emit(i, OpCodes.Throw);
+                        break;
+                    case JavaOpCode.IfICmpEq:
+                    case JavaOpCode.IfACmpEq:
+                        EmitJump(i, OpCodes.Beq, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfICmpNe:
+                    case JavaOpCode.IfACmpNe:
+                        EmitJump(i, OpCodes.Bne_Un, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfICmpLt:
+                        EmitJump(i, OpCodes.Blt, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfICmpLe:
+                        EmitJump(i, OpCodes.Ble, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfICmpGt:
+                        EmitJump(i, OpCodes.Bgt, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfICmpGe:
+                        EmitJump(i, OpCodes.Bge, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfNull:
+                        EmitJump(i, OpCodes.Brfalse, Combine(code[++i], code[++i]));
+                        break;
+                    case JavaOpCode.IfNonNull:
+                        EmitJump(i, OpCodes.Brtrue, Combine(code[++i], code[++i]));
                         break;
                     default:
                         throw new Exception($"Unknown opcode '{op}'.");
                 }
-
-                address++;
             }
 
             foreach (var jump in jumps)
@@ -304,11 +330,38 @@ namespace JavaNet.Jvm.Converter
 
         private static int Combine(byte a, byte b, byte c, byte d) => (a << 24) | (b << 16) | (c << 8) | d;
 
+        private void Emit(int instructionIndex, OpCode opCode)
+            => Emit(instructionIndex, il.Create(opCode));
+
+        private void Emit(int instructionIndex, OpCode opCode, int arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, long arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, float arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, double arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, ushort arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, string arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, TypeReference arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
+        private void Emit(int instructionIndex, OpCode opCode, MethodReference arg)
+            => Emit(instructionIndex, il.Create(opCode, arg));
+
         private void Emit(int instructionIndex, Instruction instruction)
         {
-            if (first.Count == instructionIndex)
+            if (!first.ContainsKey(instructionIndex))
             {
-                first.Add(instruction);
+                first.Add(instructionIndex, instruction);
             }
 
             il.Append(instruction);
@@ -327,24 +380,24 @@ namespace JavaNet.Jvm.Converter
 
             if (constant is JavaConstantDouble d)
             {
-                Emit(instructionIndex, il.Create(OpCodes.Ldc_R8, d.Value));
+                Emit(instructionIndex, OpCodes.Ldc_R8, d.Value);
             }
             else if (constant is JavaConstantFloat f)
             {
-                Emit(instructionIndex, il.Create(OpCodes.Ldc_R4, f.Value));
+                Emit(instructionIndex, OpCodes.Ldc_R4, f.Value);
             }
             else if (constant is JavaConstantInteger i)
             {
-                Emit(instructionIndex, il.Create(OpCodes.Ldc_I4, i.Value));
+                Emit(instructionIndex, OpCodes.Ldc_I4, i.Value);
             }
             else if (constant is JavaConstantLong l)
             {
-                Emit(instructionIndex, il.Create(OpCodes.Ldc_I8, l.Value));
+                Emit(instructionIndex, OpCodes.Ldc_I8, l.Value);
             }
             else if (constant is JavaConstantString s)
             {
                 string str = jc.GetConstant<JavaConstantUtf8>(s.StringIndex).Value;
-                Emit(instructionIndex, il.Create(OpCodes.Ldstr, str));
+                Emit(instructionIndex, OpCodes.Ldstr, str);
             }
             else
             {
@@ -368,19 +421,19 @@ namespace JavaNet.Jvm.Converter
                 switch (index)
                 {
                     case 0:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldarg_0));
+                        Emit(instructionIndex, OpCodes.Ldarg_0);
                         return;
                     case 1:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldarg_1));
+                        Emit(instructionIndex, OpCodes.Ldarg_1);
                         return;
                     case 2:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldarg_2));
+                        Emit(instructionIndex, OpCodes.Ldarg_2);
                         return;
                     case 3:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldarg_3));
+                        Emit(instructionIndex, OpCodes.Ldarg_3);
                         return;
                     default:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldarg, (ushort)index));
+                        Emit(instructionIndex, OpCodes.Ldarg, (ushort)index);
                         return;
                 }
             }
@@ -390,19 +443,19 @@ namespace JavaNet.Jvm.Converter
                 switch (index)
                 {
                     case 0:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldloc_0));
+                        Emit(instructionIndex, OpCodes.Ldloc_0);
                         return;
                     case 1:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldloc_1));
+                        Emit(instructionIndex, OpCodes.Ldloc_1);
                         return;
                     case 2:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldloc_2));
+                        Emit(instructionIndex, OpCodes.Ldloc_2);
                         return;
                     case 3:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldloc_3));
+                        Emit(instructionIndex, OpCodes.Ldloc_3);
                         return;
                     default:
-                        Emit(instructionIndex, il.Create(OpCodes.Ldloc, (ushort)index));
+                        Emit(instructionIndex, OpCodes.Ldloc, (ushort)index);
                         return;
                 }
             }
@@ -421,7 +474,7 @@ namespace JavaNet.Jvm.Converter
 
             if (index < parameters)
             {
-                Emit(instructionIndex, il.Create(OpCodes.Starg, (ushort)index));
+                Emit(instructionIndex, OpCodes.Starg, (ushort)index);
             }
             else
             {
@@ -429,19 +482,19 @@ namespace JavaNet.Jvm.Converter
                 switch (index)
                 {
                     case 0:
-                        Emit(instructionIndex, il.Create(OpCodes.Stloc_0));
+                        Emit(instructionIndex, OpCodes.Stloc_0);
                         return;
                     case 1:
-                        Emit(instructionIndex, il.Create(OpCodes.Stloc_1));
+                        Emit(instructionIndex, OpCodes.Stloc_1);
                         return;
                     case 2:
-                        Emit(instructionIndex, il.Create(OpCodes.Stloc_2));
+                        Emit(instructionIndex, OpCodes.Stloc_2);
                         return;
                     case 3:
-                        Emit(instructionIndex, il.Create(OpCodes.Stloc_3));
+                        Emit(instructionIndex, OpCodes.Stloc_3);
                         return;
                     default:
-                        Emit(instructionIndex, il.Create(OpCodes.Stloc, (ushort)index));
+                        Emit(instructionIndex, OpCodes.Stloc, (ushort)index);
                         return;
                 }
             }
